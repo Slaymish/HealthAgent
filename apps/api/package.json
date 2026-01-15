@@ -8,6 +8,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "smoke": "tsx src/smoke.ts",
+    "parse:test": "tsx src/parsers/healthAutoExport.test.ts",
+    "seed:sample": "tsx src/tools/ingestSampleAndRun.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

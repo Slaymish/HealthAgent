@@ -41,6 +41,7 @@ model DailyNutrition {
 
 model SleepSession {
   id          String   @id @default(cuid())
+  dedupeKey   String?  @unique @map("dedupe_key")
   start       DateTime
   end         DateTime
   durationMin Int      @map("duration_min")
@@ -52,6 +53,7 @@ model SleepSession {
 
 model Workout {
   id          String   @id @default(cuid())
+  sourceId    String?  @unique @map("source_id")
   start       DateTime
   type        String
   durationMin Int      @map("duration_min")

@@ -17,12 +17,14 @@ export type CanonicalRows = {
     avgHr?: number | null;
     maxHr?: number | null;
     avgPace?: number | null;
+    sourceId?: string | null;
   }>;
   sleepSessions: Array<{
     start: Date;
     end: Date;
     durationMin: number;
     quality?: string | null;
+    dedupeKey?: string | null;
   }>;
   dailyVitals: Array<{
     date: Date;

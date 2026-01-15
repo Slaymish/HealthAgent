@@ -2,7 +2,9 @@ export default function HomePage() {
   return (
     <main>
       <h1>Health Insights Agent</h1>
-      <p>Scaffolded UI. Next: dashboard + insights.</p>
+      <p>
+        <a href="/metrics">View latest metrics</a>
+      </p>
     </main>
   );
 }

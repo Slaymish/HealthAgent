@@ -1,8 +1,8 @@
+import type { ReactNode } from "react";
+
 export const metadata = {
   title: "Health Insights Agent"
 };
-
-import type { ReactNode } from "react";
 
 export default function RootLayout({
   children

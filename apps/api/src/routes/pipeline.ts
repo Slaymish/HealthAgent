@@ -121,6 +121,23 @@ async function computeMetricsPack(now = new Date()) {
 export async function pipelineRoutes(app: FastifyInstance) {
   const env = loadEnv();
 
+  app.get("/latest", async () => {
+    const latest = await prisma.pipelineRun.findFirst({
+      orderBy: { createdAt: "desc" }
+    });
+
+    return {
+      latestRun: latest
+        ? {
+            id: latest.id,
+            createdAt: latest.createdAt,
+            processedIngestCount: latest.processedIngestCount,
+            metricsPack: latest.metricsPack
+          }
+        : null
+    };
+  });
+
   app.post("/run", async (_req, reply) => {
     const unprocessed = await prisma.ingestFile.findMany({
       where: { processedAt: null },
@@ -173,27 +190,67 @@ export async function pipelineRoutes(app: FastifyInstance) {
           })
         ),
         ...parsed.rows.workouts.map((row) =>
-          prisma.workout.create({
-            data: {
-              start: row.start,
-              type: row.type,
-              durationMin: row.durationMin,
-              distanceKm: row.distanceKm ?? null,
-              avgHr: row.avgHr ?? null,
-              maxHr: row.maxHr ?? null,
-              avgPace: row.avgPace ?? null
-            }
-          })
+          row.sourceId
+            ? prisma.workout.upsert({
+                where: { sourceId: row.sourceId },
+                update: {
+                  start: row.start,
+                  type: row.type,
+                  durationMin: row.durationMin,
+                  distanceKm: row.distanceKm ?? null,
+                  avgHr: row.avgHr ?? null,
+                  maxHr: row.maxHr ?? null,
+                  avgPace: row.avgPace ?? null
+                },
+                create: {
+                  sourceId: row.sourceId,
+                  start: row.start,
+                  type: row.type,
+                  durationMin: row.durationMin,
+                  distanceKm: row.distanceKm ?? null,
+                  avgHr: row.avgHr ?? null,
+                  maxHr: row.maxHr ?? null,
+                  avgPace: row.avgPace ?? null
+                }
+              })
+            : prisma.workout.create({
+                data: {
+                  start: row.start,
+                  type: row.type,
+                  durationMin: row.durationMin,
+                  distanceKm: row.distanceKm ?? null,
+                  avgHr: row.avgHr ?? null,
+                  maxHr: row.maxHr ?? null,
+                  avgPace: row.avgPace ?? null
+                }
+              })
         ),
         ...parsed.rows.sleepSessions.map((row) =>
-          prisma.sleepSession.create({
-            data: {
-              start: row.start,
-              end: row.end,
-              durationMin: row.durationMin,
-              quality: row.quality ?? null
-            }
-          })
+          row.dedupeKey
+            ? prisma.sleepSession.upsert({
+                where: { dedupeKey: row.dedupeKey },
+                update: {
+                  start: row.start,
+                  end: row.end,
+                  durationMin: row.durationMin,
+                  quality: row.quality ?? null
+                },
+                create: {
+                  dedupeKey: row.dedupeKey,
+                  start: row.start,
+                  end: row.end,
+                  durationMin: row.durationMin,
+                  quality: row.quality ?? null
+                }
+              })
+            : prisma.sleepSession.create({
+                data: {
+                  start: row.start,
+                  end: row.end,
+                  durationMin: row.durationMin,
+                  quality: row.quality ?? null
+                }
+              })
         ),
         ...parsed.rows.dailyVitals.map((row) =>
           prisma.dailyVitals.upsert({
