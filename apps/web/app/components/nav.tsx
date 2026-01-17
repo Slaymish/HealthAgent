@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const links = [
   { href: "/", label: "Dashboard" },
@@ -13,6 +14,11 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    links.forEach((link) => router.prefetch(link.href));
+  }, [router]);
 
   return (
     <nav className="nav" aria-label="Primary">
