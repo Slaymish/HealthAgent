@@ -105,24 +105,26 @@ export default async function InsightsPage() {
         {history.docs.length === 0 ? (
           <p className="muted">No history to show yet.</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Document</th>
-                <th>Pipeline run</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.docs.map((doc) => (
-                <tr key={doc.id}>
-                  <td>{formatDate(doc.createdAt)}</td>
-                  <td>{doc.id}</td>
-                  <td>{doc.pipelineRunId ?? "—"}</td>
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Created</th>
+                  <th>Document</th>
+                  <th>Pipeline run</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {history.docs.map((doc) => (
+                  <tr key={doc.id}>
+                    <td>{formatDate(doc.createdAt)}</td>
+                    <td>{doc.id}</td>
+                    <td>{doc.pipelineRunId ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
     </div>

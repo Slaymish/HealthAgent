@@ -37,24 +37,26 @@ function SeriesTable<T>({
       {rows.length === 0 ? (
         <p className="muted">No data points recorded.</p>
       ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column.label}>{column.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index}>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
                 {columns.map((column) => (
-                  <td key={column.label}>{column.render(row)}</td>
+                  <th key={column.label}>{column.label}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={index}>
+                  {columns.map((column) => (
+                    <td key={column.label}>{column.render(row)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Card>
   );

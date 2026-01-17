@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge, Card, Grid, PageHeader, Stat } from "./components/ui";
 import { demoPipelineLatest } from "./demo-data";
 import { getSessionOrNull } from "./lib/session";
@@ -235,6 +236,17 @@ export default async function HomePage() {
             ) : (
               <p className="muted">No levers were identified for this run.</p>
             )}
+          </Card>
+
+          <Card title="Diagnostics" subtitle="When you need to sanity-check the data or inspect raw outputs.">
+            <div className="list-inline">
+              <Link className="button" href="/data-quality">
+                Data quality
+              </Link>
+              <Link className="button" href="/metrics">
+                Raw metrics
+              </Link>
+            </div>
           </Card>
         </>
       )}
