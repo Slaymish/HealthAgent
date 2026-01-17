@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Card, PageHeader } from "../components/ui";
-import { auth } from "../auth";
 import { demoPipelineLatest } from "../demo-data";
+import { getSessionOrNull } from "../lib/session";
 
 type PipelineLatestResponse = {
   latestRun:
@@ -61,7 +61,7 @@ function SeriesTable<T>({
 }
 
 export default async function TrendsPage() {
-  const session = await auth();
+  const session = await getSessionOrNull();
   const isDemo = !session;
   let data: PipelineLatestResponse;
 

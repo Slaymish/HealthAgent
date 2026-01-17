@@ -1,6 +1,6 @@
 import { Card, PageHeader, Stat } from "../components/ui";
-import { auth } from "../auth";
 import { demoPipelineLatest } from "../demo-data";
+import { getSessionOrNull } from "../lib/session";
 
 type PipelineLatestResponse = {
   latestRun:
@@ -21,7 +21,7 @@ function formatDate(value: string) {
 }
 
 export default async function MetricsPage() {
-  const session = await auth();
+  const session = await getSessionOrNull();
   const isDemo = !session;
   let data: PipelineLatestResponse;
 

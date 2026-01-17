@@ -1,6 +1,6 @@
 import { Badge, Card, Grid, PageHeader, Stat } from "./components/ui";
-import { auth } from "./auth";
 import { demoPipelineLatest } from "./demo-data";
+import { getSessionOrNull } from "./lib/session";
 
 type PipelineLatestResponse = {
   latestRun:
@@ -31,7 +31,7 @@ function describe(value: unknown) {
 }
 
 export default async function HomePage() {
-  const session = await auth();
+  const session = await getSessionOrNull();
   const isDemo = !session;
 
   let data: PipelineLatestResponse;

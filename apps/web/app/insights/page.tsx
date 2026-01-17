@@ -1,6 +1,6 @@
 import { Badge, Card, PageHeader } from "../components/ui";
-import { auth } from "../auth";
 import { demoInsightsHistory, demoInsightsLatest } from "../demo-data";
+import { getSessionOrNull } from "../lib/session";
 
 type InsightsLatestResponse = {
   latest:
@@ -31,7 +31,7 @@ function formatDate(value: string) {
 }
 
 export default async function InsightsPage() {
-  const session = await auth();
+  const session = await getSessionOrNull();
   const isDemo = !session;
 
   let latest: InsightsLatestResponse;

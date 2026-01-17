@@ -1,6 +1,6 @@
 import { Card, Grid, PageHeader, Stat } from "../components/ui";
-import { auth } from "../auth";
 import { demoDataQuality } from "../demo-data";
+import { getSessionOrNull } from "../lib/session";
 
 type DataQualitySummaryResponse = {
   range: { start: string; end: string };
@@ -43,7 +43,7 @@ function renderMissing(label: string, items: string[]) {
 }
 
 export default async function DataQualityPage() {
-  const session = await auth();
+  const session = await getSessionOrNull();
   const isDemo = !session;
 
   let data: DataQualitySummaryResponse;
