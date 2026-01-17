@@ -39,7 +39,7 @@ export default async function HomePage() {
     data = demoPipelineLatest;
   } else {
     const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001";
-    const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`, { cache: "no-store" });
+    const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`);
     if (!res.ok) {
       return (
         <div className="section">
