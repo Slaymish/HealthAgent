@@ -16,7 +16,7 @@ export default function SyncButton() {
     setMessage(null);
     try {
       const res = await fetch("/api/sync", { method: "POST" });
-      const body: { error?: string; runId?: string } = await res.json();
+      const body = (await res.json().catch(() => ({}))) as { error?: string; runId?: string };
       if (!res.ok || body.error) {
         throw new Error(body.error ?? `Sync failed (${res.status})`);
       }
