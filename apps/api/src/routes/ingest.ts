@@ -8,6 +8,27 @@ import { writeStorageJson } from "../storage/storage.js";
 
 const bodySchema = z.unknown();
 
+function normalizeJsonBody(body: unknown): unknown {
+  if (Buffer.isBuffer(body)) {
+    body = body.toString("utf8");
+  }
+
+  if (typeof body === "string") {
+    const trimmed = body.trim();
+    // Apple Shortcuts often sends file contents as raw text.
+    // If it's valid JSON, parse it so we store a proper JSON payload.
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        // Fall through and store it as a string if it isn't valid JSON.
+      }
+    }
+  }
+
+  return body;
+}
+
 function computeSha256(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
@@ -21,7 +42,8 @@ export async function ingestRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: "unauthorized" });
     }
 
-    const body = bodySchema.parse(req.body);
+    const parsed = bodySchema.parse(req.body);
+    const body = normalizeJsonBody(parsed);
     const raw = JSON.stringify(body);
 
     const checksum = computeSha256(raw);
