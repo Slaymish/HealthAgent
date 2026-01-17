@@ -54,3 +54,27 @@ See `.env.example` for the full list. Common ones:
 ## Deploy
 
 GCP deployment (Cloud Run + Cloud SQL + GCS + Cloud Scheduler) is documented in [DEPLOY_GCP.md](docs/DEPLOY_GCP.md).
+
+## Budget mode (<$10/month)
+
+Cloud SQL is convenient, but it’s easy to accidentally pay for **24/7 instance uptime** even if you’re not using the app. If you want to keep this project under a strict hobby budget, prefer one of these approaches:
+
+### Option A (cheapest): no cloud, run locally
+
+- Use the local Postgres via `pnpm db:up` and keep `STORAGE_PROVIDER=local`.
+- Run the API/web only when you need them (`pnpm dev`) and run the pipeline on demand.
+- Cost: effectively $0 (aside from your own machine).
+
+### Option B: one small VPS running everything
+
+- Run Postgres + API + web on a single small VM with Docker.
+- Use local disk for raw storage.
+- This avoids managed database pricing, at the cost of you owning updates/backups.
+
+### Option C: serverless Postgres + pay-per-use compute
+
+- Keep Postgres on a serverless/free-tier provider (set `DATABASE_URL` accordingly).
+- Run API/web on a pay-per-use/free-tier host.
+- This keeps “always-on database VM” costs out of your bill while preserving a Postgres backend for Prisma.
+
+If you stay on GCP, set a Billing budget/alert for Cloud SQL and double-check whether your Cloud SQL instance is HA/regional and whether automated backups/retention are enabled.

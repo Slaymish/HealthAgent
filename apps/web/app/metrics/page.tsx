@@ -9,6 +9,8 @@ type PipelineLatestResponse = {
     | null;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function MetricsPage() {
   const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001";
   const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`);

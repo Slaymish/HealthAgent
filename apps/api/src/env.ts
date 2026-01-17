@@ -7,6 +7,7 @@ const envSchema = z.object({
   PIPELINE_TOKEN: z.string().optional(),
 
   DATABASE_URL: z.string().min(1),
+  DATABASE_DIRECT_URL: z.string().optional(),
 
   STORAGE_PROVIDER: z.enum(["local", "s3", "gcs"]).default("local"),
   STORAGE_LOCAL_DIR: z.string().default("storage/local"),

@@ -1,4 +1,4 @@
-# Deploy to GCP (Cloud Run + Cloud SQL + GCS + Cloud Scheduler)
+# Deploy to GCP (Cloud Run + Postgres + GCS + Cloud Scheduler)
 
 This repo is set up to deploy the API to Cloud Run and store raw ingests in GCS.
 
@@ -27,12 +27,66 @@ gcloud services enable \
 
 ```bash
 export BUCKET=health-agent-raw-YOUR_PROJECT_ID
-export REGION=us-central1
+# If your database is in APAC (e.g. Neon ap-southeast-2), using an AU region reduces latency/egress.
+export REGION=australia-southeast1
 
 gcloud storage buckets create gs://$BUCKET --location=$REGION
 ```
 
-## 2) Create Cloud SQL Postgres
+## 2) Choose your Postgres
+
+This repo uses Postgres via Prisma. You have two options:
+
+- **Option B (managed on GCP): Cloud SQL Postgres** (easy, but can be surprisingly expensive if left running)
+- **Option C (budget-friendly): external/serverless Postgres** (avoids “always-on Cloud SQL VM” costs)
+
+If your goal is **<$10/month** and you only ingest once a day, Option C is usually the best fit.
+
+### Option C (recommended for low budget): external/serverless Postgres
+
+Use a Postgres provider that supports **connection pooling** (often via a “pooled” connection string / PgBouncer endpoint). Prisma works best with a pooled endpoint when your compute can scale.
+
+What you need from the provider:
+
+- A Postgres database
+- A **pooled** connection string (preferred)
+- A **direct** connection string (sometimes required for migrations)
+
+Set these as env vars (names are up to you; the API only requires `DATABASE_URL`):
+
+- `DATABASE_URL` = pooled URL (recommended for runtime)
+- `DATABASE_DIRECT_URL` = direct URL (recommended for migrations), if your provider gives one
+
+Then run migrations from your machine:
+
+```bash
+# Example:
+# export DATABASE_URL='postgresql://...'
+# export DATABASE_DIRECT_URL='postgresql://...'
+pnpm --filter @health-agent/api prisma:deploy
+```
+
+Deploying to Cloud Run (no Cloud SQL attachment):
+
+```bash
+export SERVICE=health-agent-api
+export IMAGE=gcr.io/$PROJECT_ID/health-agent-api:latest
+
+gcloud run deploy $SERVICE \
+  --image $IMAGE \
+  --region $REGION \
+  --allow-unauthenticated \
+  --min-instances 0 \
+  --max-instances 1 \
+  --set-env-vars \
+API_PORT=8080,STORAGE_PROVIDER=gcs,STORAGE_BUCKET=$BUCKET,INGEST_TOKEN=REPLACE_ME,PIPELINE_TOKEN=REPLACE_ME,DATABASE_URL='REPLACE_WITH_PROVIDER_URL'
+```
+
+Note: avoid putting secrets directly in command history. For production, prefer Secret Manager + `--set-secrets`.
+
+When deploying the Cloud Run service, you will **not** use `--add-cloudsql-instances` and you will set `DATABASE_URL` to the provider URL.
+
+### Option B: Cloud SQL Postgres
 
 ```bash
 export INSTANCE=health-agent-pg
@@ -86,7 +140,7 @@ Do not commit real tokens/passwords into this repo. Use placeholders locally and
 
 Note: `gcloud run services describe ... --format='value(...env)'` will print your secrets in plaintext. Avoid pasting that output into docs/chats. If secrets are exposed, rotate them.
 
-You also need a Cloud SQL socket DATABASE_URL. Example:
+If you are using Cloud SQL, you also need a Cloud SQL socket DATABASE_URL. Example:
 
 ```
 postgresql://postgres:PASSWORD@/health_agent?host=/cloudsql/INSTANCE_CONNECTION_NAME&schema=public
@@ -106,6 +160,22 @@ gcloud run deploy $SERVICE \
   --add-cloudsql-instances $INSTANCE_CONNECTION_NAME \
   --set-env-vars \
 API_PORT=8080,STORAGE_PROVIDER=gcs,STORAGE_BUCKET=$BUCKET,INGEST_TOKEN=REPLACE_ME,PIPELINE_TOKEN=REPLACE_ME,DATABASE_URL='postgresql://postgres:PASSWORD@/health_agent?host=/cloudsql/'$INSTANCE_CONNECTION_NAME'&schema=public'
+
+### Low-cost Cloud Run settings (recommended)
+
+To keep Cloud Run costs near-zero when idle:
+
+- Set **min instances = 0**
+- Consider setting **max instances = 1** (helps protect your Postgres from too many concurrent connections)
+
+You can apply these on deploy, for example:
+
+```bash
+gcloud run deploy $SERVICE \
+  --region $REGION \
+  --min-instances 0 \
+  --max-instances 1
+```
 ```
 
 For production, prefer storing `INGEST_TOKEN`, `PIPELINE_TOKEN`, and `DATABASE_URL` in Secret Manager and mounting them as env vars via `--set-secrets` instead of `--set-env-vars`.
@@ -218,3 +288,4 @@ gcloud scheduler jobs create http health-agent-daily-pipeline \
 - The API supports `STORAGE_PROVIDER=local` (dev) and `STORAGE_PROVIDER=gcs` (cloud).
 - `/api/pipeline/run` is protected only when `PIPELINE_TOKEN` is set.
 - Web deployment isn’t covered here; simplest is Vercel pointing at the API URL via `API_BASE_URL`.
+- If you only upload once a day, Cloud Run + Scheduler + external Postgres typically stays very cheap; your largest variable cost is usually LLM usage if `OPENAI_API_KEY` is enabled.
