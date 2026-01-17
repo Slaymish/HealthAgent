@@ -10,7 +10,7 @@ export const metadata = {
   title: "Health Insights Agent"
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: {
   children: ReactNode;
