@@ -29,7 +29,7 @@ export default async function MetricsPage() {
     data = demoPipelineLatest as PipelineLatestResponse;
   } else {
     const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001";
-    const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`);
+    const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`, { cache: "no-store" });
 
     if (!res.ok) {
       return (
@@ -66,8 +66,11 @@ export default async function MetricsPage() {
             </div>
           </Card>
 
-          <Card title="Metrics pack">
-            <pre className="code-block">{JSON.stringify(data.latestRun.metricsPack, null, 2)}</pre>
+          <Card title="Metrics pack" subtitle="Full payload is tucked into a readable block.">
+            <details className="code-details">
+              <summary className="code-summary">View raw JSON</summary>
+              <pre className="code-block">{JSON.stringify(data.latestRun.metricsPack, null, 2)}</pre>
+            </details>
           </Card>
         </>
       ) : (

@@ -44,8 +44,8 @@ export default async function InsightsPage() {
     const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001";
 
     const [latestRes, historyRes] = await Promise.all([
-      fetch(`${apiBaseUrl}/api/insights/latest`),
-      fetch(`${apiBaseUrl}/api/insights/history`)
+      fetch(`${apiBaseUrl}/api/insights/latest`, { cache: "no-store" }),
+      fetch(`${apiBaseUrl}/api/insights/history`, { cache: "no-store" })
     ]);
 
     if (!latestRes.ok || !historyRes.ok) {

@@ -2,8 +2,11 @@
 // Falls back to null when auth is misconfigured (e.g., missing secret) or throws.
 export async function getSessionOrNull() {
   try {
-    const { auth } = await import("../auth");
-    return await auth();
+    const [{ getServerSession }, { authOptions }] = await Promise.all([
+      import("next-auth/next"),
+      import("../auth")
+    ]);
+    return await getServerSession(authOptions);
   } catch (err) {
     console.error("auth_failed", err);
     return null;

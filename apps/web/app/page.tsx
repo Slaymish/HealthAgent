@@ -22,12 +22,43 @@ function formatDate(value: string | null | undefined) {
   return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
-function describe(value: unknown) {
+function formatNumber(value: number | null | undefined, digits = 1) {
   if (value === null || value === undefined) return "—";
-  if (typeof value === "number") return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string") return value;
-  return JSON.stringify(value, null, 2);
+  if (Number.isNaN(value)) return "—";
+  return Number.isInteger(value) ? value.toString() : value.toFixed(digits);
+}
+
+function formatMinutes(value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  if (Number.isNaN(value)) return "—";
+  const rounded = Math.round(value);
+  const hours = Math.floor(rounded / 60);
+  const minutes = rounded % 60;
+  if (hours <= 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+
+function MetricTile({
+  title,
+  items
+}: {
+  title: string;
+  items: Array<{ label: string; value: string }>;
+}) {
+  return (
+    <div className="metric-tile">
+      <h4 className="metric-title">{title}</h4>
+      <div className="metric-list">
+        {items.map((item) => (
+          <div key={item.label} className="metric-item">
+            <span>{item.label}</span>
+            <span>{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default async function HomePage() {
@@ -39,7 +70,7 @@ export default async function HomePage() {
     data = demoPipelineLatest;
   } else {
     const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001";
-    const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`);
+    const res = await fetch(`${apiBaseUrl}/api/pipeline/latest`, { cache: "no-store" });
     if (!res.ok) {
       return (
         <div className="section">
@@ -69,11 +100,49 @@ export default async function HomePage() {
   const levers = (pack?.levers ?? []) as string[];
 
   const scoreTiles = [
-    { label: "Weight", value: pack?.weight },
-    { label: "Nutrition", value: pack?.nutrition },
-    { label: "Training", value: pack?.training },
-    { label: "Sleep", value: pack?.sleep },
-    { label: "Recovery", value: pack?.recovery }
+    {
+      title: "Weight",
+      items: [
+        {
+          label: "Latest",
+          value: pack?.weight?.latest?.weightKg != null ? `${formatNumber(pack.weight.latest.weightKg, 1)} kg` : "—"
+        },
+        { label: "7d slope", value: pack?.weight?.slopeKgPerDay7 != null ? `${formatNumber(pack.weight.slopeKgPerDay7, 3)} kg/day` : "—" },
+        { label: "14d slope", value: pack?.weight?.slopeKgPerDay14 != null ? `${formatNumber(pack.weight.slopeKgPerDay14, 3)} kg/day` : "—" }
+      ]
+    },
+    {
+      title: "Nutrition",
+      items: [
+        { label: "Calories (7d)", value: pack?.nutrition?.avgCalories7 != null ? formatNumber(pack.nutrition.avgCalories7, 0) : "—" },
+        { label: "Calories (14d)", value: pack?.nutrition?.avgCalories14 != null ? formatNumber(pack.nutrition.avgCalories14, 0) : "—" },
+        { label: "Protein (7d)", value: pack?.nutrition?.avgProteinG7 != null ? `${formatNumber(pack.nutrition.avgProteinG7, 0)} g` : "—" },
+        { label: "Protein (14d)", value: pack?.nutrition?.avgProteinG14 != null ? `${formatNumber(pack.nutrition.avgProteinG14, 0)} g` : "—" }
+      ]
+    },
+    {
+      title: "Training",
+      items: [
+        { label: "Sessions (7d)", value: pack?.training?.sessions7 != null ? formatNumber(pack.training.sessions7, 0) : "—" },
+        { label: "Sessions (14d)", value: pack?.training?.sessions14 != null ? formatNumber(pack.training.sessions14, 0) : "—" },
+        { label: "Minutes (7d)", value: pack?.training?.minutes7 != null ? formatMinutes(pack.training.minutes7) : "—" },
+        { label: "Minutes (14d)", value: pack?.training?.minutes14 != null ? formatMinutes(pack.training.minutes14) : "—" }
+      ]
+    },
+    {
+      title: "Sleep",
+      items: [
+        { label: "Avg sleep (7d)", value: pack?.sleep?.avgSleepMin7 != null ? formatMinutes(pack.sleep.avgSleepMin7) : "—" },
+        { label: "Avg sleep (14d)", value: pack?.sleep?.avgSleepMin14 != null ? formatMinutes(pack.sleep.avgSleepMin14) : "—" }
+      ]
+    },
+    {
+      title: "Recovery",
+      items: [
+        { label: "Resting HR (7d)", value: pack?.recovery?.avgRestingHr7 != null ? `${formatNumber(pack.recovery.avgRestingHr7, 0)} bpm` : "—" },
+        { label: "Resting HR (14d)", value: pack?.recovery?.avgRestingHr14 != null ? `${formatNumber(pack.recovery.avgRestingHr14, 0)} bpm` : "—" }
+      ]
+    }
   ];
 
   return (
@@ -147,11 +216,11 @@ export default async function HomePage() {
           </Grid>
 
           <Card title="Score tiles" subtitle="High-level health inputs and readiness at a glance.">
-            <Grid columns={3}>
+            <div className="metric-grid">
               {scoreTiles.map((tile) => (
-                <Stat key={tile.label} label={tile.label} value={describe(tile.value)} />
+                <MetricTile key={tile.title} title={tile.title} items={tile.items} />
               ))}
-            </Grid>
+            </div>
           </Card>
 
           <Card title="Key levers" subtitle="Actions that matter most right now.">

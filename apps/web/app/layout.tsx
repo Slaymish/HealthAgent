@@ -4,6 +4,7 @@ import Nav from "./components/nav";
 import SyncButton from "./components/sync-button";
 import Providers from "./providers";
 import AuthButton from "./components/auth-button";
+import UserGreeting from "./components/user-greeting";
 
 export const metadata = {
   title: "Health Insights Agent"
@@ -29,6 +30,7 @@ export default function RootLayout({
               </div>
               <Nav />
               <div className="actions">
+                <UserGreeting />
                 <SyncButton />
                 <AuthButton />
               </div>
