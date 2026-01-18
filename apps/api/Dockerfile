@@ -33,6 +33,7 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 
 # Prisma generate + TS build
+RUN pnpm --filter @health-agent/shared build
 RUN pnpm --filter @health-agent/api prisma:generate
 RUN pnpm --filter @health-agent/api build
 
@@ -50,6 +51,7 @@ ENV API_PORT=8080
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/prisma apps/api/prisma
 COPY --from=build /app/apps/api/package.json apps/api/package.json
+COPY --from=build /app/packages/shared packages/shared
 COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/apps/api/node_modules apps/api/node_modules
 

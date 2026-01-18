@@ -15,3 +15,8 @@ dist/
 /storage/
 apps/api/.env
 apps/web/.env.local
+HealthAutoExport-*.json
+Health Insights Agent_files/
+Health Insights Agent.html
+*.pdf
+google-cloud-cli/
