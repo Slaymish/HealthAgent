@@ -1,5 +1,6 @@
 import { Card, Grid, PageHeader, Stat } from "../components/ui";
 import { demoDataQuality } from "../demo-data";
+import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
 
 type DataQualitySummaryResponse = {
@@ -16,12 +17,6 @@ type DataQualitySummaryResponse = {
 };
 
 export const dynamic = "force-dynamic";
-
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}
 
 function renderMissing(label: string, items: string[]) {
   return (
@@ -81,8 +76,8 @@ export default async function DataQualityPage() {
           {data.lastIngest ? (
             <div className="stack">
               <Stat label="Ingest id" value={data.lastIngest.id} hint={`Source: ${data.lastIngest.source}`} />
-              <Stat label="Received" value={formatDate(data.lastIngest.receivedAt)} />
-              <Stat label="Processed" value={formatDate(data.lastIngest.processedAt)} />
+              <Stat label="Received" value={formatDateTime(data.lastIngest.receivedAt)} />
+              <Stat label="Processed" value={formatDateTime(data.lastIngest.processedAt)} />
             </div>
           ) : (
             <p className="muted">No ingests have been received yet.</p>
@@ -93,7 +88,7 @@ export default async function DataQualityPage() {
           {data.lastPipelineRun ? (
             <div className="stack">
               <Stat label="Run id" value={data.lastPipelineRun.id} />
-              <Stat label="Created" value={formatDate(data.lastPipelineRun.createdAt)} />
+              <Stat label="Created" value={formatDateTime(data.lastPipelineRun.createdAt)} />
               <Stat label="Processed ingests" value={data.lastPipelineRun.processedIngestCount ?? "—"} />
             </div>
           ) : (

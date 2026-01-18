@@ -1,5 +1,6 @@
 import { Card, PageHeader, Stat } from "../components/ui";
 import { demoPipelineLatest } from "../demo-data";
+import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
 
 type PipelineLatestResponse = {
@@ -14,11 +15,6 @@ type PipelineLatestResponse = {
 };
 
 export const dynamic = "force-dynamic";
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}
 
 export default async function MetricsPage() {
   const session = await getSessionOrNull();
@@ -61,7 +57,7 @@ export default async function MetricsPage() {
           <Card title="Run details" subtitle="Quick context before diving into the payload.">
             <div className="grid cols-2">
               <Stat label="Run id" value={data.latestRun.id} />
-              <Stat label="Created" value={formatDate(data.latestRun.createdAt)} />
+              <Stat label="Created" value={formatDateTime(data.latestRun.createdAt)} />
               <Stat label="Processed ingests" value={data.latestRun.processedIngestCount ?? "—"} />
             </div>
           </Card>

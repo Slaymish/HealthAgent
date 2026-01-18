@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge, Card, Grid, PageHeader, Stat } from "./components/ui";
 import { demoPipelineLatest } from "./demo-data";
+import { formatDateTime, formatDelta, formatMinutes, formatNumber, type DeltaTone } from "./lib/format";
 import { getSessionOrNull } from "./lib/session";
 
 type PipelineLatestResponse = {
@@ -16,48 +17,79 @@ type PipelineLatestResponse = {
 
 export const dynamic = "force-dynamic";
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
-
-function formatNumber(value: number | null | undefined, digits = 1) {
-  if (value === null || value === undefined) return "—";
-  if (Number.isNaN(value)) return "—";
-  return Number.isInteger(value) ? value.toString() : value.toFixed(digits);
-}
-
-function formatMinutes(value: number | null | undefined) {
-  if (value === null || value === undefined) return "—";
-  if (Number.isNaN(value)) return "—";
-  const rounded = Math.round(value);
-  const hours = Math.floor(rounded / 60);
-  const minutes = rounded % 60;
-  if (hours <= 0) return `${minutes}m`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}m`;
-}
-
-function MetricTile({
+function GlanceSignal({
   title,
-  items
+  value,
+  hint,
+  delta,
+  link
 }: {
   title: string;
-  items: Array<{ label: string; value: string }>;
+  value: string;
+  hint?: string;
+  delta?: { text: string; tone: DeltaTone };
+  link?: string;
 }) {
   return (
-    <div className="metric-tile">
-      <h4 className="metric-title">{title}</h4>
-      <div className="metric-list">
-        {items.map((item) => (
-          <div key={item.label} className="metric-item">
-            <span>{item.label}</span>
-            <span>{item.value}</span>
-          </div>
-        ))}
+    <div className="glance-block">
+      <div className="glance-block__header">
+        <h4 className="glance-title">{title}</h4>
+        {delta ? <span className={`delta ${delta.tone === "neutral" ? "" : delta.tone}`.trim()}>{delta.text}</span> : null}
       </div>
+      <div className="glance-value">{value}</div>
+      {hint ? <p className="muted">{hint}</p> : null}
+      {link ? (
+        <Link className="chip" href={link}>
+          View detail →
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function ChangeItem({
+  title,
+  detail,
+  tone,
+  link
+}: {
+  title: string;
+  detail: string;
+  tone?: DeltaTone;
+  link?: string;
+}) {
+  const toneClass =
+    tone === "positive" ? "good" : tone === "negative" ? "attention" : tone === "warn" ? "warn" : "";
+  return (
+    <li className="change-item">
+      <div className="change-meta">
+        <span className={`chip ${toneClass}`.trim()}>{tone === "negative" ? "Attention" : tone === "warn" ? "Caution" : "Update"}</span>
+        {link ? (
+          <Link className="chip" href={link}>
+            Evidence
+          </Link>
+        ) : null}
+      </div>
+      <div className="stat-value">{title}</div>
+      <p className="muted">{detail}</p>
+    </li>
+  );
+}
+
+function LeverCard({
+  text,
+  why,
+  confidence
+}: {
+  text: string;
+  why?: string;
+  confidence?: string;
+}) {
+  return (
+    <div className="lever-card">
+      <h4 className="lever-title">{text}</h4>
+      {why ? <div className="lever-why">{why}</div> : null}
+      {confidence ? <span className="chip">{confidence}</span> : null}
     </div>
   );
 }
@@ -75,7 +107,7 @@ export default async function HomePage() {
     if (!res.ok) {
       return (
         <div className="section">
-          <PageHeader title="Dashboard" description="Signals that show whether the plan is working and where to focus." />
+          <PageHeader title="Status" description="Signals that show whether the plan is working and where to focus next." />
           <Card title="API unavailable">
             <p className="muted">Failed to load from API: {res.status}</p>
           </Card>
@@ -100,137 +132,228 @@ export default async function HomePage() {
 
   const levers = (pack?.levers ?? []) as string[];
 
-  const scoreTiles = [
+  const weightSlope7 = pack?.weight?.slopeKgPerDay7;
+  const weightSlope14 = pack?.weight?.slopeKgPerDay14;
+  const calories7 = pack?.nutrition?.avgCalories7;
+  const calories14 = pack?.nutrition?.avgCalories14;
+  const protein7 = pack?.nutrition?.avgProteinG7;
+  const protein14 = pack?.nutrition?.avgProteinG14;
+  const sleep7 = pack?.sleep?.avgSleepMin7;
+  const sleep14 = pack?.sleep?.avgSleepMin14;
+  const trainingSessions7 = pack?.training?.sessions7;
+  const trainingSessions14 = pack?.training?.sessions14;
+  const trainingMinutes7 = pack?.training?.minutes7;
+
+  const confidenceNotes: string[] = [];
+  if (sleep7 == null || sleep14 == null) {
+    confidenceNotes.push("Sleep data missing; recovery trends may be unreliable.");
+  }
+  if (calories7 == null || protein7 == null) {
+    confidenceNotes.push("Nutrition logging incomplete; calorie/protein signals may be soft.");
+  }
+  if (trainingSessions7 == null) {
+    confidenceNotes.push("Training data missing this week; cadence may be undercounted.");
+  }
+
+  const headlineSignals = [
     {
-      title: "Weight",
-      items: [
-        {
-          label: "Latest",
-          value: pack?.weight?.latest?.weightKg != null ? `${formatNumber(pack.weight.latest.weightKg, 1)} kg` : "—"
-        },
-        { label: "7d slope", value: pack?.weight?.slopeKgPerDay7 != null ? `${formatNumber(pack.weight.slopeKgPerDay7, 3)} kg/day` : "—" },
-        { label: "14d slope", value: pack?.weight?.slopeKgPerDay14 != null ? `${formatNumber(pack.weight.slopeKgPerDay14, 3)} kg/day` : "—" }
-      ]
+      title: "Weight trend",
+      value: weightSlope14 != null ? `${formatNumber(weightSlope14, 3)} kg/day (14d)` : "No recent readings",
+      delta: formatDelta(weightSlope7, weightSlope14, "kg/day", {
+        precision: 3,
+        goodDirection: "down"
+      }),
+      hint: onTrack
+        ? `Need ${formatNumber(onTrack.requiredSlopeKgPerDay, 3)} kg/day to hit ${onTrack.targetDate}.`
+        : "Set a target to track progress against a plan.",
+      link: "/trends"
     },
     {
-      title: "Nutrition",
-      items: [
-        { label: "Calories (7d)", value: pack?.nutrition?.avgCalories7 != null ? formatNumber(pack.nutrition.avgCalories7, 0) : "—" },
-        { label: "Calories (14d)", value: pack?.nutrition?.avgCalories14 != null ? formatNumber(pack.nutrition.avgCalories14, 0) : "—" },
-        { label: "Protein (7d)", value: pack?.nutrition?.avgProteinG7 != null ? `${formatNumber(pack.nutrition.avgProteinG7, 0)} g` : "—" },
-        { label: "Protein (14d)", value: pack?.nutrition?.avgProteinG14 != null ? `${formatNumber(pack.nutrition.avgProteinG14, 0)} g` : "—" }
-      ]
+      title: "Calorie adherence",
+      value: calories7 != null ? `${formatNumber(calories7, 0)} avg kcal (7d)` : "No recent logs",
+      delta: formatDelta(calories7, calories14, "kcal", {
+        precision: 0,
+        goodDirection: "down"
+      }),
+      hint: protein7 != null ? `Protein ${formatNumber(protein7, 0)}g (7d).` : undefined,
+      link: "/trends"
     },
     {
-      title: "Training",
-      items: [
-        { label: "Sessions (7d)", value: pack?.training?.sessions7 != null ? formatNumber(pack.training.sessions7, 0) : "—" },
-        { label: "Sessions (14d)", value: pack?.training?.sessions14 != null ? formatNumber(pack.training.sessions14, 0) : "—" },
-        { label: "Minutes (7d)", value: pack?.training?.minutes7 != null ? formatMinutes(pack.training.minutes7) : "—" },
-        { label: "Minutes (14d)", value: pack?.training?.minutes14 != null ? formatMinutes(pack.training.minutes14) : "—" }
-      ]
+      title: "Sleep consistency",
+      value: sleep7 != null ? `${formatMinutes(sleep7)} avg (7d)` : "No sleep captured",
+      delta: formatDelta(sleep7, sleep14, "min", {
+        precision: 0,
+        goodDirection: "up"
+      }),
+      hint: "Keep nightly variance tight to steady hunger and recovery.",
+      link: "/trends"
     },
     {
-      title: "Sleep",
-      items: [
-        { label: "Avg sleep (7d)", value: pack?.sleep?.avgSleepMin7 != null ? formatMinutes(pack.sleep.avgSleepMin7) : "—" },
-        { label: "Avg sleep (14d)", value: pack?.sleep?.avgSleepMin14 != null ? formatMinutes(pack.sleep.avgSleepMin14) : "—" }
-      ]
-    },
-    {
-      title: "Recovery",
-      items: [
-        { label: "Resting HR (7d)", value: pack?.recovery?.avgRestingHr7 != null ? `${formatNumber(pack.recovery.avgRestingHr7, 0)} bpm` : "—" },
-        { label: "Resting HR (14d)", value: pack?.recovery?.avgRestingHr14 != null ? `${formatNumber(pack.recovery.avgRestingHr14, 0)} bpm` : "—" }
-      ]
+      title: "Training cadence",
+      value: trainingSessions7 != null ? `${formatNumber(trainingSessions7, 0)} sessions (7d)` : "No training logged",
+      delta: formatDelta(trainingSessions7, trainingSessions14, "sessions", {
+        precision: 0,
+        goodDirection: "up"
+      }),
+      hint: trainingMinutes7 != null ? `${formatMinutes(trainingMinutes7)} total minutes.` : undefined,
+      link: "/trends"
     }
   ];
+
+  const changeSummary: Array<{ title: string; detail: string; tone: DeltaTone; link?: string }> = [
+    {
+      title: "Direction of change",
+      detail:
+        weightSlope14 != null
+          ? `14d weight slope ${formatNumber(weightSlope14, 3)} kg/day ${onTrack ? `(requires ${formatNumber(onTrack.requiredSlopeKgPerDay, 3)})` : ""}`
+          : "No weight slope available.",
+      tone: onTrack ? (onTrack.onTrack ? "positive" : "negative") : "neutral",
+      link: "/trends"
+    },
+    {
+      title: "Nutrition shift",
+      detail:
+        calories7 != null && calories14 != null
+          ? `Calories ${formatNumber(calories7, 0)} vs ${formatNumber(calories14, 0)} last week; protein ${
+              protein7 != null ? `${formatNumber(protein7, 0)}g` : "—"
+            }`
+          : "No recent calorie/protein data.",
+      tone: "warn",
+      link: "/trends"
+    },
+    {
+      title: "Recovery + sleep",
+      detail:
+        sleep7 != null && sleep14 != null
+          ? `Sleep ${formatMinutes(sleep7)} vs ${formatMinutes(sleep14)} last week.`
+          : "Sleep data missing; adjust expectations.",
+      tone: sleep7 != null && sleep14 != null && sleep7 < sleep14 ? "warn" : "neutral",
+      link: "/trends"
+    }
+  ];
+
+  const leverCards = levers.slice(0, 3).map((lever) => ({
+    text: lever,
+    why: "Highest impact lever identified from the latest run.",
+    confidence: "Confidence: medium"
+  }));
+
+  const synthesizedStatus = onTrack
+    ? onTrack.onTrack
+      ? `Weight trend is on track for ${onTrack.targetWeightKg} kg by ${onTrack.targetDate}. Keep inputs steady.`
+      : `Trend is off plan. Required slope ${formatNumber(onTrack.requiredSlopeKgPerDay, 3)} kg/day; current ${formatNumber(
+          onTrack.observedSlopeKgPerDay14,
+          3
+        )} kg/day.`
+    : "Set a target so we can compare trend to plan and adjust early.";
 
   return (
     <div className="section">
       <PageHeader
-        title="Dashboard"
+        title="Status"
         description={
           isDemo
-            ? "Demo view: sign in to see your own data."
-            : "Latest read on whether the plan is on track, how the inputs look, and the levers to pull next."
+            ? "Demo view: quick read on direction, key levers, and where to focus this week."
+            : "Quick synthesis of whether the plan is working, what shifted, and the one or two levers to pull next."
         }
         meta={
           data.latestRun
-            ? [{ label: "Last run", value: formatDate(data.latestRun.createdAt) }]
+            ? [{ label: "Last run", value: formatDateTime(data.latestRun.createdAt) }]
             : [{ label: "Pipeline", value: "Not run yet" }]
         }
       />
 
       {!data.latestRun ? (
-        <Card title="No pipeline runs yet">
-          <p className="muted">Ingest data and trigger a pipeline run to start seeing health signals.</p>
+        <Card title="No pipeline runs yet" subtitle="We need a run to generate signals.">
+          <div className="stack">
+            <p className="muted">Ingest data and trigger a pipeline run to start seeing health signals.</p>
+            <div className="list-inline">
+              <Link className="button" href="/data-quality">
+                Check data flow
+              </Link>
+            </div>
+          </div>
         </Card>
       ) : (
         <>
-          <Grid columns={2}>
-            <Card
-              title="Latest pipeline run"
-              subtitle="Quick check that ingestion and processing are flowing."
-              action={<Badge tone="neutral">Run {data.latestRun.id}</Badge>}
-            >
+          {confidenceNotes.length ? (
+            <Card title="Confidence" subtitle="Where signals may be soft.">
               <div className="stack">
-                <Stat label="Created" value={formatDate(data.latestRun.createdAt)} />
-                <Stat label="Processed ingest files" value={data.latestRun.processedIngestCount ?? "—"} />
+                {confidenceNotes.map((note) => (
+                  <div key={note} className="callout warn">
+                    {note}
+                  </div>
+                ))}
               </div>
             </Card>
+          ) : null}
 
+          <Grid columns={2}>
             <Card
-              title="Goal tracking"
-              subtitle="Compares the plan to current trend so we can adjust early."
+              title="Status"
+              subtitle="Lead with the plan: on track, drifting, or off track."
               action={
                 onTrack ? (
-                  <Badge tone={onTrack.onTrack ? "positive" : "negative"}>
-                    {onTrack.onTrack ? "On track" : "Off track"}
-                  </Badge>
+                  <Badge tone={onTrack.onTrack ? "positive" : "negative"}>{onTrack.onTrack ? "On track" : "Off track"}</Badge>
                 ) : (
                   <Badge tone="neutral">No goal set</Badge>
                 )
               }
             >
-              {onTrack ? (
-                <div className="stack">
-                  <Stat label="Target" value={`${onTrack.targetWeightKg} kg by ${onTrack.targetDate}`} />
-                  <Stat
-                    label="Required slope"
-                    hint="Expected rate to hit the target"
-                    value={`${onTrack.requiredSlopeKgPerDay.toFixed(3)} kg/day`}
-                  />
-                  <Stat
-                    label="Observed slope (14d)"
-                    hint="Current trend based on the last two weeks"
-                    value={`${onTrack.observedSlopeKgPerDay14.toFixed(3)} kg/day`}
-                  />
-                </div>
-              ) : (
-                <p className="muted">
-                  Goal not configured. Set <code>GOAL_TARGET_WEIGHT_KG</code> and <code>GOAL_TARGET_DATE</code> in the API
-                  environment.
-                </p>
-              )}
+              <div className="stack">
+                <div className="stat-value">{synthesizedStatus}</div>
+                {onTrack ? (
+                  <div className="summary-strip">
+                    <span className="chip">Required: {formatNumber(onTrack.requiredSlopeKgPerDay, 3)} kg/day</span>
+                    <span className="chip">Observed (14d): {formatNumber(onTrack.observedSlopeKgPerDay14, 3)} kg/day</span>
+                    <span className="chip">Target: {onTrack.targetWeightKg} kg by {onTrack.targetDate}</span>
+                  </div>
+                ) : (
+                  <p className="muted">
+                    Add <code>GOAL_TARGET_WEIGHT_KG</code> and <code>GOAL_TARGET_DATE</code> to the API environment to enable plan tracking.
+                  </p>
+                )}
+              </div>
+            </Card>
+
+            <Card
+              title="System health"
+              subtitle="Quick check that ingestion and processing are flowing."
+              action={<Badge tone="neutral">Run {data.latestRun.id}</Badge>}
+            >
+              <div className="stack">
+                <Stat label="Created" value={formatDateTime(data.latestRun.createdAt)} />
+                <Stat label="Processed ingest files" value={data.latestRun.processedIngestCount ?? "—"} />
+                <details className="raw-toggle">
+                  <summary>Raw meta</summary>
+                  <p className="muted">Generated at: {formatDateTime(pack?.generatedAt ?? null)}</p>
+                  <p className="muted">Pipeline id: {data.latestRun.id}</p>
+                </details>
+              </div>
             </Card>
           </Grid>
 
-          <Card title="Score tiles" subtitle="High-level health inputs and readiness at a glance.">
-            <div className="metric-grid">
-              {scoreTiles.map((tile) => (
-                <MetricTile key={tile.title} title={tile.title} items={tile.items} />
+          <Card title="Headline signals" subtitle="Glanceable read on trend vs plan; details live in Trends.">
+            <div className="glance-grid">
+              {headlineSignals.map((signal) => (
+                <GlanceSignal key={signal.title} title={signal.title} value={signal.value} hint={signal.hint} delta={signal.delta} link={signal.link} />
               ))}
             </div>
           </Card>
 
+          <Card title="What changed since last week" subtitle="Claim → evidence → lever, kept short.">
+            <ul className="change-list">
+              {changeSummary.map((item) => (
+                <ChangeItem key={item.title} title={item.title} detail={item.detail} tone={item.tone} link={item.link} />
+              ))}
+            </ul>
+          </Card>
+
           <Card title="Key levers" subtitle="Actions that matter most right now.">
-            {levers.length ? (
-              <div className="list-inline">
-                {levers.map((lever) => (
-                  <span key={lever} className="pill">
-                    {lever}
-                  </span>
+            {leverCards.length ? (
+              <div className="lever-grid">
+                {leverCards.map((lever) => (
+                  <LeverCard key={lever.text} text={lever.text} why={lever.why} confidence={lever.confidence} />
                 ))}
               </div>
             ) : (
@@ -238,8 +361,11 @@ export default async function HomePage() {
             )}
           </Card>
 
-          <Card title="Diagnostics" subtitle="When you need to sanity-check the data or inspect raw outputs.">
+          <Card title="Diagnostics" subtitle="Evidence and debugging paths.">
             <div className="list-inline">
+              <Link className="button" href="/trends">
+                Trends
+              </Link>
               <Link className="button" href="/data-quality">
                 Data quality
               </Link>

@@ -25,7 +25,7 @@ export default function RootLayout({
                 <div className="brand-mark" />
                 <div>
                   <div className="brand-title">Health Agent</div>
-                  <div className="brand-subtitle">Personal health signal radar</div>
+                  <div className="brand-subtitle">Decide what to do next</div>
                 </div>
               </div>
               <Nav />
