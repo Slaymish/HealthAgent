@@ -1,47 +1,36 @@
 # Copilot instructions (HealthAgent)
 
-## Repo shape
-- PNPM workspace monorepo: `apps/api` (Fastify + Prisma) and `apps/web` (Next.js App Router).
-- Canonical health data lives in Postgres via Prisma; raw ingest payloads are stored separately (currently local disk).
+## Big picture
+- PNPM workspace monorepo: `apps/api` (Fastify + Prisma, TS ESM) and `apps/web` (Next.js App Router).
+- Canonical health data lives in Postgres (Prisma); raw ingest payloads are stored separately (local disk in dev, optional GCS).
 
-## Core data flow (the important mental model)
-- Ingest: `POST /api/ingest/apple-health` → auth via `X-INGEST-TOKEN` → write raw JSON to storage → insert `ingest_files` row.
-  - Implementation: `apps/api/src/routes/ingest.ts`.
-- Pipeline: `POST /api/pipeline/run` → loads all `ingest_files` with `processed_at IS NULL` → reads raw JSON from storage → parses into canonical rows → upserts canonical tables → marks ingest processed → computes metrics pack → persists `pipeline_runs` + seeds first `insights_docs`.
-  - Implementation: `apps/api/src/routes/pipeline.ts`.
-- Web reads metrics from API: `GET /api/pipeline/latest` and renders JSON.
-  - Implementation: `apps/web/app/metrics/page.tsx`.
+## Core data flow (read this mental model first)
+- Ingest: `POST /api/ingest/apple-health`
+  - Auth: `X-INGEST-TOKEN` **or** `Authorization: Bearer <token>` (must match `INGEST_TOKEN`).
+  - Normalizes body (buffer/string/JSON), hashes SHA-256, writes raw JSON to storage at `apple-health/<timestamp>_<checksum>.json`, inserts `ingest_files`.
+  - Code: `apps/api/src/routes/ingest.ts`, `apps/api/src/storage/storage.ts`.
+- Pipeline: `POST /api/pipeline/run`
+  - Optional auth: if `PIPELINE_TOKEN` is set, require `X-PIPELINE-TOKEN` or `Authorization: Bearer <token>`.
+  - Processes unhandled ingests (`processed_at IS NULL`): read raw JSON → parse via `parseAppleHealthExport` → upsert canonical tables in a transaction → mark ingest processed.
+  - Computes metrics pack + optional `onTrack`, inserts `pipeline_runs`; emits `warnings[]` from parser + sanity checks.
+  - Optional insights: when `INSIGHTS_ENABLED=true`, creates/updates `insights_docs` using an OpenAI-generated unified diff (see `apps/api/src/insights/*`).
+  - Code: `apps/api/src/routes/pipeline.ts`, `apps/api/src/parsers/healthAutoExport.ts`.
+- Web reads metrics: `GET /api/pipeline/latest` (see `apps/web/app/metrics/page.tsx`).
 
-## Local dev workflows (use these commands)
-- Install: `pnpm i`
-- Start Postgres: `pnpm db:up` (uses `docker-compose.yml`)
-- Prisma:
-  - Generate client: `pnpm db:generate`
-  - Run migrations: `pnpm db:migrate`
-- Run services:
-  - API dev server (port from env, default 3001): `pnpm --filter @health-agent/api dev`
-  - Web dev server (port 3000): `pnpm --filter @health-agent/web dev`
-- Seed + run pipeline on the bundled sample export:
-  - `pnpm --filter @health-agent/api seed:sample` (stores a file + calls `/api/pipeline/run` internally)
-- Parser smoke: `pnpm --filter @health-agent/api parse:test`
+## Local dev workflows
+- Install + run: `pnpm i` → `pnpm db:up` → `pnpm db:generate` → `pnpm db:migrate` → `pnpm dev`.
+- API dev (default 3001): `pnpm --filter @health-agent/api dev`; Web dev (3000): `pnpm --filter @health-agent/web dev`.
+- Seed bundled sample + run pipeline: `pnpm --filter @health-agent/api seed:sample`.
+- Parser smoke: `pnpm --filter @health-agent/api parse:test`.
 
-## Environment + config conventions (easy to get wrong)
-- The API loads dotenv from `apps/api/.env` (see `apps/api/src/dotenv.ts`). Keep required vars in sync with `apps/api/src/env.ts`.
-  - Start from the template at `.env.example` and copy to `apps/api/.env`.
-- Local storage mode is the only implemented provider right now:
-  - `STORAGE_PROVIDER=local`
-  - `STORAGE_LOCAL_DIR=storage/local` → writes under `storage/local/apple-health/...`
-- The web app expects `API_BASE_URL` (defaults to `http://localhost:3001`) in `apps/web` env (e.g. `apps/web/.env.local`) if you need to point it elsewhere.
+## Env + conventions (easy to get wrong)
+- API loads dotenv from `apps/api/.env` (see `apps/api/src/dotenv.ts`); env is validated with zod in `apps/api/src/env.ts`.
+- Storage: `STORAGE_PROVIDER=local|gcs`; local writes under `STORAGE_LOCAL_DIR` (default `storage/local`); GCS requires `STORAGE_BUCKET`.
+- API is ESM (`"type": "module"`): TS imports use `.js` extensions (e.g. `./routes/pipeline.js`).
+- Prisma uses camelCase fields in code but maps to snake_case via `@map`/`@@map` in `apps/api/prisma/schema.prisma`.
+- Web uses `API_BASE_URL` (default `http://localhost:3001`); some pages fall back to demo data when unauthenticated.
 
-## Project-specific coding conventions
-- API is ESM (`"type": "module"`), so TS imports use `.js` extensions (e.g. `./routes/ingest.js`). Preserve this.
-- Prisma models map to snake_case tables/columns using `@@map`/`@map` in `apps/api/prisma/schema.prisma`; code uses camelCase fields.
-- Parsing contracts:
-  - Parser output is `CanonicalRows` in `apps/api/src/parsers/types.ts`.
-  - Primary parser is `apps/api/src/parsers/healthAutoExport.ts` and is currently re-exported as `parseAppleHealthExport` via `apps/api/src/parsers/appleHealthStub.ts`.
-  - Prefer returning partial data + `warnings[]` over throwing for missing metrics.
-
-## Extending the system (where to make changes)
-- Add/adjust canonical DB fields: edit `apps/api/prisma/schema.prisma` → run `pnpm db:migrate`.
-- Add support for new export formats or metrics: extend `apps/api/src/parsers/healthAutoExport.ts` (and keep the output shape stable).
-- Add new API routes: register them in `apps/api/src/app.ts`.
+## Where to change things
+- DB schema: `apps/api/prisma/schema.prisma` → `pnpm db:migrate`.
+- Parser output/types: `apps/api/src/parsers/types.ts` + `apps/api/src/parsers/healthAutoExport.ts`.
+- Routes: implement under `apps/api/src/routes/*` and register in `apps/api/src/app.ts`.

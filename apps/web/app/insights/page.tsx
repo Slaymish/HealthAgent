@@ -62,6 +62,12 @@ function parseDiff(diff: string | null | undefined): DiffItem[] {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
+    .filter((line) => {
+      if (line.startsWith("+++")) return false;
+      if (line.startsWith("---")) return false;
+      if (line.startsWith("@@")) return false;
+      return line.startsWith("+") || line.startsWith("-");
+    })
     .map((line) => {
       const tone: DiffItem["tone"] = line.startsWith("-") ? "attention" : line.startsWith("+") ? "positive" : "neutral";
       return { text: line.replace(/^[-+]\s*/, ""), tone };
@@ -151,29 +157,31 @@ export default async function InsightsPage() {
           </Card>
 
           <Card title="What changed vs last week" subtitle="Diffs are brief and traceable.">
-            {diffItems.length ? (
-              <ul className="change-list">
-                {diffItems.map((item) => (
-                  <li key={item.text} className="change-item">
-                    <div className="change-meta">
-                      <span className={`chip ${toneClassName(item.tone)}`.trim()}>{item.tone === "positive" ? "Improved" : item.tone === "attention" ? "Regressed" : "Changed"}</span>
-                      <Link className="chip" href="/trends">
-                        Evidence
-                      </Link>
-                    </div>
-                    <div className="stat-value">{item.text}</div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="muted">No diff provided.</p>
-            )}
-            {latest.latest.diffFromPrev ? (
-              <details className="raw-toggle" style={{ marginTop: 8 }}>
-                <summary>View raw diff</summary>
-                <pre className="code-block">{latest.latest.diffFromPrev}</pre>
-              </details>
-            ) : null}
+            <div className="stack">
+              {diffItems.length ? (
+                <ul className="change-list">
+                  {diffItems.map((item) => (
+                    <li key={item.text} className="change-item">
+                      <div className="change-meta">
+                        <span className={`chip ${toneClassName(item.tone)}`.trim()}>{item.tone === "positive" ? "Improved" : item.tone === "attention" ? "Regressed" : "Changed"}</span>
+                        <Link className="chip" href="/trends">
+                          Evidence
+                        </Link>
+                      </div>
+                      <div className="stat-value">{item.text}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted">No diff provided.</p>
+              )}
+              {latest.latest.diffFromPrev ? (
+                <details className="raw-toggle">
+                  <summary>View raw diff</summary>
+                  <pre className="code-block">{latest.latest.diffFromPrev}</pre>
+                </details>
+              ) : null}
+            </div>
           </Card>
         </>
       )}

@@ -51,6 +51,6 @@
 - [ ] Add alerts: “no ingest in 36h” (optional)
 
 10) Iterate on leverage + on-track logic
-- [x] Define goal target weight + target date
-- [x] Implement required weight-loss slope + compare to observed trend slope
+- [x] Define goal target weight + projection logic
+- [x] Implement projected arrival date from observed trend slope
 - [x] Improve lever selection rules (always 3 max, always actionable)

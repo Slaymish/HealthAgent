@@ -121,7 +121,7 @@ What happens:
    - Upsert into canonical tables in a transaction
    - Mark the ingest file as processed (`processed_at = now()`)
 4. Compute the **metrics pack** (7/14/28-day summaries + trend series).
-5. Compute **onTrack** if goal env vars are set.
+5. Compute a goal projection (estimate when the target weight is reached at the current trend) if `GOAL_TARGET_WEIGHT_KG` is set.
 6. Insert a `pipeline_runs` row with the metrics pack.
 7. Update the living **insights doc**:
    - If there is no previous doc: create `# Insights\n\n`
@@ -286,4 +286,3 @@ If you’re new to the codebase, this is the fastest order to build a mental mod
 - Add metrics: update `computeMetricsPack()` in `apps/api/src/routes/pipeline.ts`.
 - Change ingest auth or headers: `apps/api/src/routes/ingest.ts`.
 - Change LLM behavior/prompt: `apps/api/src/insights/llm.ts`.
-

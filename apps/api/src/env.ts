@@ -23,13 +23,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   INSIGHTS_MODEL: z.string().optional(),
 
-  GOAL_TARGET_WEIGHT_KG: z.coerce.number().positive().optional(),
-  GOAL_TARGET_DATE: z
-    .string()
-    .optional()
-    .refine((v) => (v == null || v.trim() === "" ? true : !Number.isNaN(new Date(v).getTime())), {
-      message: "must be a valid date string"
-    })
+  GOAL_TARGET_WEIGHT_KG: z.coerce.number().positive().optional()
 })
   .refine(
     (v) => (v.STORAGE_PROVIDER === "gcs" ? typeof v.STORAGE_BUCKET === "string" && v.STORAGE_BUCKET.length > 0 : true),

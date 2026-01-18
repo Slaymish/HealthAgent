@@ -119,13 +119,16 @@ export default async function HomePage() {
 
   const pack = data.latestRun?.metricsPack;
 
-  const onTrack = pack?.onTrack as
+  const goalProjection = pack?.goalProjection as
     | {
-        onTrack: boolean;
         targetWeightKg: number;
-        targetDate: string;
-        requiredSlopeKgPerDay: number;
+        latestWeightKg: number;
+        deltaToGoalKg: number;
         observedSlopeKgPerDay14: number;
+        observedSlopeKgPerWeek?: number;
+        projectedDaysToGoal: number | null;
+        projectedDate: string | null;
+        trend: "toward" | "away" | "flat" | "at-goal";
       }
     | null
     | undefined;
@@ -155,6 +158,21 @@ export default async function HomePage() {
     confidenceNotes.push("Training data missing this week; cadence may be undercounted.");
   }
 
+  const projectionReachable = goalProjection?.projectedDate != null;
+  const projectionTone: DeltaTone =
+    goalProjection && (goalProjection.trend === "toward" || goalProjection.trend === "at-goal") ? "positive" : goalProjection ? "negative" : "neutral";
+  const projectedDateLabel =
+    goalProjection && goalProjection.projectedDate
+      ? formatDateTime(goalProjection.projectedDate, { dateStyle: "medium" })
+      : null;
+  const projectionHint = goalProjection
+    ? goalProjection.trend === "at-goal"
+      ? `Goal met at ${goalProjection.targetWeightKg} kg.`
+      : projectionReachable
+        ? `Est. ${goalProjection.targetWeightKg} kg by ${projectedDateLabel}.`
+        : `Current pace won't reach ${goalProjection.targetWeightKg} kg (trend ${goalProjection.trend}).`
+    : "Set a target weight to see a projection.";
+
   const headlineSignals = [
     {
       title: "Weight trend",
@@ -163,9 +181,7 @@ export default async function HomePage() {
         precision: 3,
         goodDirection: "down"
       }),
-      hint: onTrack
-        ? `Need ${formatNumber(onTrack.requiredSlopeKgPerDay, 3)} kg/day to hit ${onTrack.targetDate}.`
-        : "Set a target to track progress against a plan.",
+      hint: projectionHint,
       link: "/trends"
     },
     {
@@ -205,9 +221,17 @@ export default async function HomePage() {
       title: "Direction of change",
       detail:
         weightSlope14 != null
-          ? `14d weight slope ${formatNumber(weightSlope14, 3)} kg/day ${onTrack ? `(requires ${formatNumber(onTrack.requiredSlopeKgPerDay, 3)})` : ""}`
+          ? goalProjection
+            ? goalProjection.trend === "at-goal"
+              ? `Goal met; 14d slope ${formatNumber(weightSlope14, 3)} kg/day.`
+              : projectionReachable
+                ? `14d slope ${formatNumber(weightSlope14, 3)} kg/day → ${goalProjection.targetWeightKg} kg by ${projectedDateLabel}.`
+                : `14d slope ${formatNumber(weightSlope14, 3)} kg/day is ${
+                    goalProjection.trend === "away" ? "moving away from" : "flat toward"
+                  } ${goalProjection.targetWeightKg} kg.`
+            : `14d weight slope ${formatNumber(weightSlope14, 3)} kg/day; set a goal weight for a projection.`
           : "No weight slope available.",
-      tone: onTrack ? (onTrack.onTrack ? "positive" : "negative") : "neutral",
+      tone: goalProjection ? projectionTone : "neutral",
       link: "/trends"
     },
     {
@@ -238,14 +262,23 @@ export default async function HomePage() {
     confidence: "Confidence: medium"
   }));
 
-  const synthesizedStatus = onTrack
-    ? onTrack.onTrack
-      ? `Weight trend is on track for ${onTrack.targetWeightKg} kg by ${onTrack.targetDate}. Keep inputs steady.`
-      : `Trend is off plan. Required slope ${formatNumber(onTrack.requiredSlopeKgPerDay, 3)} kg/day; current ${formatNumber(
-          onTrack.observedSlopeKgPerDay14,
-          3
-        )} kg/day.`
-    : "Set a target so we can compare trend to plan and adjust early.";
+  const synthesizedStatus = goalProjection
+    ? goalProjection.trend === "at-goal"
+      ? `Goal met at ${goalProjection.targetWeightKg} kg. Hold steady to maintain.`
+      : projectionReachable
+        ? `On current 14d pace (${formatNumber(goalProjection.observedSlopeKgPerDay14, 3)} kg/day), projected to hit ${goalProjection.targetWeightKg} kg around ${projectedDateLabel}.`
+        : `Current trend (${formatNumber(goalProjection.observedSlopeKgPerDay14, 3)} kg/day) is ${
+            goalProjection.trend === "away" ? "moving away from" : "flat toward"
+          } the ${goalProjection.targetWeightKg} kg goal.`
+    : "Set a target weight to get a projected arrival date.";
+
+  const goalBadge = goalProjection
+    ? goalProjection.trend === "at-goal"
+      ? { label: "Goal met", tone: "positive" as const }
+      : projectionReachable
+        ? { label: "On pace", tone: "positive" as const }
+        : { label: goalProjection.trend === "away" ? "Off pace" : "No momentum", tone: "negative" as const }
+    : { label: "No goal set", tone: "neutral" as const };
 
   return (
     <div className="section">
@@ -291,26 +324,22 @@ export default async function HomePage() {
           <Grid columns={2}>
             <Card
               title="Status"
-              subtitle="Lead with the plan: on track, drifting, or off track."
-              action={
-                onTrack ? (
-                  <Badge tone={onTrack.onTrack ? "positive" : "negative"}>{onTrack.onTrack ? "On track" : "Off track"}</Badge>
-                ) : (
-                  <Badge tone="neutral">No goal set</Badge>
-                )
-              }
+              subtitle="Lead with the goal: direction and projected timeline."
+              action={<Badge tone={goalBadge.tone}>{goalBadge.label}</Badge>}
             >
               <div className="stack">
                 <div className="stat-value">{synthesizedStatus}</div>
-                {onTrack ? (
+                {goalProjection ? (
                   <div className="summary-strip">
-                    <span className="chip">Required: {formatNumber(onTrack.requiredSlopeKgPerDay, 3)} kg/day</span>
-                    <span className="chip">Observed (14d): {formatNumber(onTrack.observedSlopeKgPerDay14, 3)} kg/day</span>
-                    <span className="chip">Target: {onTrack.targetWeightKg} kg by {onTrack.targetDate}</span>
+                    <span className="chip">Pace (14d): {formatNumber(goalProjection.observedSlopeKgPerDay14, 3)} kg/day</span>
+                    <span className="chip">
+                      Projection: {projectionReachable ? `${projectedDateLabel} (${goalProjection.projectedDaysToGoal ?? "—"}d)` : "Not at this pace"}
+                    </span>
+                    <span className="chip">Delta: {formatNumber(goalProjection.deltaToGoalKg, 2)} kg to {goalProjection.targetWeightKg} kg</span>
                   </div>
                 ) : (
                   <p className="muted">
-                    Add <code>GOAL_TARGET_WEIGHT_KG</code> and <code>GOAL_TARGET_DATE</code> to the API environment to enable plan tracking.
+                    Add <code>GOAL_TARGET_WEIGHT_KG</code> to the API environment to enable projected timelines.
                   </p>
                 )}
               </div>
@@ -333,7 +362,7 @@ export default async function HomePage() {
             </Card>
           </Grid>
 
-          <Card title="Headline signals" subtitle="Glanceable read on trend vs plan; details live in Trends.">
+          <Card title="Headline signals" subtitle="Glanceable read on trend and goal projection; details live in Trends.">
             <div className="glance-grid">
               {headlineSignals.map((signal) => (
                 <GlanceSignal key={signal.title} title={signal.title} value={signal.value} hint={signal.hint} delta={signal.delta} link={signal.link} />

@@ -61,12 +61,15 @@ export const demoPipelineLatest = {
         "Hold 3-4 training sessions per week.",
         "Aim for >7h sleep on travel days."
       ],
-      onTrack: {
-        onTrack: true,
+      goalProjection: {
         targetWeightKg: 78,
-        targetDate: "2025-03-15",
-        requiredSlopeKgPerDay: -0.03,
-        observedSlopeKgPerDay14: -0.04
+        latestWeightKg: 79.4,
+        deltaToGoalKg: -1.4,
+        observedSlopeKgPerDay14: -0.04,
+        observedSlopeKgPerWeek: -0.28,
+        projectedDaysToGoal: 35,
+        projectedDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString(),
+        trend: "toward"
       }
     }
   }

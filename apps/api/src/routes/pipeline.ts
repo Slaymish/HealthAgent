@@ -170,38 +170,49 @@ async function computeMetricsPack(now = new Date()) {
   };
 }
 
-function computeOnTrack(params: {
+function computeGoalProjection(params: {
   env: ReturnType<typeof loadEnv>;
   metricsPack: any;
 }): any {
   const { env, metricsPack } = params;
-  if (!env.GOAL_TARGET_WEIGHT_KG || !env.GOAL_TARGET_DATE) return null;
-  const targetDate = new Date(env.GOAL_TARGET_DATE);
-  if (Number.isNaN(targetDate.getTime())) return null;
+  if (!env.GOAL_TARGET_WEIGHT_KG) return null;
   const latest = metricsPack.weight?.latest;
   if (!latest || typeof latest.weightKg !== "number") return null;
 
   const today = new Date(metricsPack.ranges?.d7?.end ?? new Date().toISOString());
-  const msPerDay = 24 * 60 * 60 * 1000;
-  const daysRemaining = Math.ceil((startOfDayUtc(targetDate).getTime() - startOfDayUtc(today).getTime()) / msPerDay);
-  if (daysRemaining <= 0) return null;
-
-  const requiredSlopeKgPerDay = (env.GOAL_TARGET_WEIGHT_KG - latest.weightKg) / daysRemaining;
   const observed = metricsPack.weight?.slopeKgPerDay14;
   const observedSlopeKgPerDay14 = typeof observed === "number" ? observed : null;
   if (observedSlopeKgPerDay14 == null) return null;
 
-  const losing = requiredSlopeKgPerDay < 0;
-  const onTrack = losing
-    ? observedSlopeKgPerDay14 <= requiredSlopeKgPerDay
-    : observedSlopeKgPerDay14 >= requiredSlopeKgPerDay;
+  const deltaToGoalKg = env.GOAL_TARGET_WEIGHT_KG - latest.weightKg;
+  const trend =
+    deltaToGoalKg === 0
+      ? "at-goal"
+      : observedSlopeKgPerDay14 === 0
+        ? "flat"
+        : deltaToGoalKg * observedSlopeKgPerDay14 > 0
+          ? "toward"
+          : "away";
+
+  let projectedDaysToGoal: number | null = null;
+  let projectedDate: string | null = null;
+
+  if (deltaToGoalKg === 0) {
+    projectedDaysToGoal = 0;
+    projectedDate = startOfDayUtc(today).toISOString();
+  } else if (trend === "toward") {
+    projectedDaysToGoal = Math.ceil(Math.abs(deltaToGoalKg / observedSlopeKgPerDay14));
+    projectedDate = addDaysUtc(startOfDayUtc(today), projectedDaysToGoal).toISOString();
+  }
 
   return {
     targetWeightKg: env.GOAL_TARGET_WEIGHT_KG,
-    targetDate: targetDate.toISOString(),
-    requiredSlopeKgPerDay,
     observedSlopeKgPerDay14,
-    onTrack
+    observedSlopeKgPerWeek: observedSlopeKgPerDay14 * 7,
+    deltaToGoalKg,
+    projectedDaysToGoal,
+    projectedDate,
+    trend
   };
 }
 
@@ -394,10 +405,10 @@ export async function pipelineRoutes(app: FastifyInstance) {
     }
 
     const metricsPack = await computeMetricsPack();
-    const onTrack = computeOnTrack({ env, metricsPack: metricsPack as any });
+    const goalProjection = computeGoalProjection({ env, metricsPack: metricsPack as any });
     const metricsPackWithGoal = {
       ...(metricsPack as any),
-      onTrack
+      goalProjection
     };
 
     const run = await prisma.pipelineRun.create({

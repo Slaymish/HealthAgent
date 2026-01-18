@@ -170,11 +170,11 @@ a {
 }
 
 .sync-message.done {
-  color: var(--success);
+  color: var(--good);
 }
 
 .sync-message.error {
-  color: var(--danger);
+  color: var(--attention);
 }
 
 .pill {

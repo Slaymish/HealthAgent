@@ -1,4 +1,4 @@
-import { Card, Grid, PageHeader, Stat } from "../components/ui";
+import { Badge, Card, Grid, PageHeader, Stat } from "../components/ui";
 import { demoDataQuality } from "../demo-data";
 import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
@@ -23,7 +23,7 @@ function renderMissing(label: string, items: string[]) {
     <div key={label} className="stack">
       <div className="section-title">{label}</div>
       {items.length === 0 ? (
-        <span className="badge positive">Complete</span>
+        <Badge tone="positive">Complete</Badge>
       ) : (
         <div className="list-inline">
           {items.map((day) => (

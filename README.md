@@ -50,7 +50,7 @@ See `.env.example` for the full list. Common ones:
 - `STORAGE_PROVIDER=local|gcs` (+ `STORAGE_LOCAL_DIR` or `STORAGE_BUCKET`)
 - `INSIGHTS_ENABLED` (optional, default false)
 - `OPENAI_API_KEY` + `INSIGHTS_MODEL` (optional; only used when `INSIGHTS_ENABLED=true`)
-- `GOAL_TARGET_WEIGHT_KG` + `GOAL_TARGET_DATE` (optional)
+- `GOAL_TARGET_WEIGHT_KG` (optional; enables projected timeline to goal)
 
 ## Deploy
 

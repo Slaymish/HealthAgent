@@ -57,7 +57,6 @@ function TrendCard({
   hint?: string;
   children: ReactNode;
 }) {
-  const toneClass = delta?.tone === "positive" ? "good" : delta?.tone === "negative" ? "attention" : delta?.tone === "warn" ? "warn" : "";
   return (
     <Card title={title} subtitle={subtitle}>
       <div className="stack">
@@ -67,7 +66,6 @@ function TrendCard({
             {delta ? <span className={`delta ${delta.tone === "neutral" ? "" : delta.tone}`.trim()}>{delta.text}</span> : null}
           </div>
           {hint ? <p className="muted">{hint}</p> : null}
-          {delta ? <span className={`chip ${toneClass}`.trim()}>{delta.text}</span> : null}
         </div>
         {children}
       </div>
