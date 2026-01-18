@@ -34,6 +34,7 @@ pnpm dev
 - Web: http://localhost:3000
 
 Tip: the API loads dotenv from `apps/api/.env`.
+The API now runs `prisma migrate deploy` on startup to ensure tables (including NextAuth tables) exist; set `PRISMA_MIGRATE_ON_START=false` if you need to skip this and manage migrations manually.
 Make sure `INTERNAL_API_KEY` matches in both `.env` files and set `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` to enable sign-in.
 
 ## Key endpoints

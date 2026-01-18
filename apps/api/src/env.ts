@@ -9,6 +9,17 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1),
   DATABASE_DIRECT_URL: z.string().optional(),
+  PRISMA_MIGRATE_ON_START: z
+    .preprocess((v) => {
+      if (typeof v === "boolean") return v;
+      if (typeof v === "string") {
+        const normalized = v.toLowerCase();
+        if (["1", "true", "yes", "on"].includes(normalized)) return true;
+        if (["0", "false", "no", "off"].includes(normalized)) return false;
+      }
+      return undefined;
+    }, z.boolean().optional())
+    .default(true),
 
   STORAGE_PROVIDER: z.enum(["local", "gcs"]).default("local"),
   STORAGE_LOCAL_DIR: z.string().default("storage/local"),
