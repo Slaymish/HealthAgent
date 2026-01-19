@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../prisma.js";
 import { requireUserFromInternalRequest } from "../auth.js";
 import { loadEnv } from "../env.js";
+import { sanitizeInsightsMarkdown } from "../insights/sanitize.js";
 
 export async function insightsRoutes(app: FastifyInstance) {
   const env = loadEnv();
@@ -20,7 +21,7 @@ export async function insightsRoutes(app: FastifyInstance) {
         ? {
             id: latest.id,
             createdAt: latest.createdAt,
-            markdown: latest.markdown,
+            markdown: sanitizeInsightsMarkdown(latest.markdown).markdown,
             diffFromPrev: latest.diffFromPrev,
             pipelineRunId: latest.pipelineRunId
           }
@@ -60,7 +61,7 @@ export async function insightsRoutes(app: FastifyInstance) {
         ? {
             id: doc.id,
             createdAt: doc.createdAt,
-            markdown: doc.markdown,
+            markdown: sanitizeInsightsMarkdown(doc.markdown).markdown,
             diffFromPrev: doc.diffFromPrev,
             pipelineRunId: doc.pipelineRunId
           }
