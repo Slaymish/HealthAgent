@@ -25,7 +25,8 @@ export default async function PreferencesPage() {
           targetCarbsG: true,
           targetSleepHours: true,
           targetTrainingSessions: true,
-          targetFibreG: true
+          targetFibreG: true,
+          insightsSystemPrompt: true
         }
       })
     : null;

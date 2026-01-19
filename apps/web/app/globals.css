@@ -683,6 +683,11 @@ h4 {
   color: var(--text-primary);
 }
 
+.textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
 .input:focus {
   outline: 2px solid var(--accent-border);
 }

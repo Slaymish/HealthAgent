@@ -12,6 +12,7 @@ type PreferencesPayload = {
   targetSleepHours?: number | null;
   targetTrainingSessions?: number | null;
   targetFibreG?: number | null;
+  insightsSystemPrompt?: string | null;
 };
 
 function parseNumberField(
@@ -34,6 +35,17 @@ function parseNumberField(
   return value;
 }
 
+function parseTextField(body: Record<string, unknown>, key: keyof PreferencesPayload): string | null | undefined {
+  if (!Object.prototype.hasOwnProperty.call(body, key)) return undefined;
+  const value = body[key];
+  if (value === null) return null;
+  if (typeof value !== "string") {
+    throw new Error(`Invalid ${key}`);
+  }
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
+}
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -52,7 +64,8 @@ export async function GET() {
       targetCarbsG: true,
       targetSleepHours: true,
       targetTrainingSessions: true,
-      targetFibreG: true
+      targetFibreG: true,
+      insightsSystemPrompt: true
     }
   });
 
@@ -90,6 +103,8 @@ export async function PUT(request: Request) {
     if (training !== undefined) data.targetTrainingSessions = training;
     const fibre = parseNumberField(body, "targetFibreG", { min: 0 });
     if (fibre !== undefined) data.targetFibreG = fibre;
+    const insightsSystemPrompt = parseTextField(body, "insightsSystemPrompt");
+    if (insightsSystemPrompt !== undefined) data.insightsSystemPrompt = insightsSystemPrompt;
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -102,7 +117,8 @@ export async function PUT(request: Request) {
         targetCarbsG: true,
         targetSleepHours: true,
         targetTrainingSessions: true,
-        targetFibreG: true
+        targetFibreG: true,
+        insightsSystemPrompt: true
       }
     });
 

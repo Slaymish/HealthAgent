@@ -26,6 +26,7 @@ model User {
   targetSleepHours Float? @map("target_sleep_hours")
   targetTrainingSessions Int? @map("target_training_sessions")
   targetFibreG Float? @map("target_fibre_g")
+  insightsSystemPrompt String? @db.Text @map("insights_system_prompt")
 
   accounts    Account[]
   sessions    Session[]

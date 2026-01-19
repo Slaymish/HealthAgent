@@ -453,7 +453,8 @@ export async function pipelineRoutes(app: FastifyInstance) {
               apiKey: env.OPENAI_API_KEY,
               model: env.INSIGHTS_MODEL,
               previousMarkdown: prev.markdown,
-              metricsPack: metricsPackWithGoal
+              metricsPack: metricsPackWithGoal,
+              systemPrompt: user.insightsSystemPrompt
             });
 
             nextMarkdown = applyUnifiedDiff({ previous: prev.markdown, patch: diff });

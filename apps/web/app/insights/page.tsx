@@ -5,6 +5,7 @@ import { demoInsightsHistory, demoInsightsLatest } from "../demo-data";
 import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
 import { fetchUserApi } from "../lib/api-client";
+import RerunInsightsButton from "./rerun-insights-button";
 
 type InsightsLatestResponse = {
   latest:
@@ -103,9 +104,12 @@ export default async function InsightsPage() {
           <Card title="No insights yet" subtitle="Run the pipeline to generate a synthesis." icon={<ClipboardList aria-hidden="true" />}>
             <div className="stack">
               <p className="muted">After a run, you will see the weekly summary here.</p>
-              <Link className="button" href="/">
-                Go to Status
-              </Link>
+              <div className="summary-strip">
+                <RerunInsightsButton />
+                <Link className="button" href="/">
+                  Go to Status
+                </Link>
+              </div>
             </div>
           </Card>
         ) : (
@@ -118,6 +122,7 @@ export default async function InsightsPage() {
           >
             <div className="stack">
               <div className="summary-strip">
+                <RerunInsightsButton />
                 <span className="chip">Pipeline run: {latest.latest.pipelineRunId ?? "n/a"}</span>
                 <span className="chip">Updated: {formatDateTime(latest.latest.createdAt)}</span>
               </div>

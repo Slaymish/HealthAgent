@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { INSIGHTS_DEFAULT_SYSTEM_PROMPT } from "@health-agent/shared";
 
 const chatResponseSchema = z.object({
   choices: z
@@ -17,14 +18,13 @@ export async function generateInsightsUnifiedDiff(params: {
   model: string;
   previousMarkdown: string;
   metricsPack: unknown;
+  systemPrompt?: string | null;
 }): Promise<string> {
-  const { apiKey, model, previousMarkdown, metricsPack } = params;
+  const { apiKey, model, previousMarkdown, metricsPack, systemPrompt } = params;
 
-  const system =
-    "You write a concise weekly health synthesis. " +
-    "You MUST output ONLY a unified diff patch (no code fences, no commentary). " +
-    "The patch must transform the previous markdown into an updated markdown. " +
-    "Use file names 'a/insights.md' and 'b/insights.md'.";
+  const baseSystem = INSIGHTS_DEFAULT_SYSTEM_PROMPT;
+  const trimmedSystemPrompt = systemPrompt?.trim();
+  const system = trimmedSystemPrompt ? `${baseSystem}\n\nUser preferences:\n${trimmedSystemPrompt}` : baseSystem;
 
   const user =
     "Update the insights document using the provided metrics pack.\n" +

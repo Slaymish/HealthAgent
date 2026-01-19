@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { INSIGHTS_DEFAULT_SYSTEM_PROMPT } from "@health-agent/shared";
 import { Card } from "../components/ui";
 import { Apple, HeartPulse, Target } from "lucide-react";
 
@@ -13,6 +14,7 @@ type Preferences = {
   targetSleepHours: number | null;
   targetTrainingSessions: number | null;
   targetFibreG: number | null;
+  insightsSystemPrompt: string | null;
 };
 
 type FieldKey = keyof Preferences;
@@ -23,6 +25,10 @@ type PreferencesFormProps = {
 
 function formatNumber(value: number | null): string {
   return value == null ? "" : String(value);
+}
+
+function formatText(value: string | null): string {
+  return value ?? "";
 }
 
 function parseOptionalNumber(label: string, value: string, options?: { min?: number; int?: boolean }): number | null {
@@ -51,7 +57,8 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
     targetCarbsG: formatNumber(initial?.targetCarbsG ?? null),
     targetSleepHours: formatNumber(initial?.targetSleepHours ?? null),
     targetTrainingSessions: formatNumber(initial?.targetTrainingSessions ?? null),
-    targetFibreG: formatNumber(initial?.targetFibreG ?? null)
+    targetFibreG: formatNumber(initial?.targetFibreG ?? null),
+    insightsSystemPrompt: formatText(initial?.insightsSystemPrompt ?? null)
   });
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -66,7 +73,8 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
       form.targetCarbsG !== formatNumber(baseline.targetCarbsG) ||
       form.targetSleepHours !== formatNumber(baseline.targetSleepHours) ||
       form.targetTrainingSessions !== formatNumber(baseline.targetTrainingSessions) ||
-      form.targetFibreG !== formatNumber(baseline.targetFibreG)
+      form.targetFibreG !== formatNumber(baseline.targetFibreG) ||
+      form.insightsSystemPrompt !== formatText(baseline.insightsSystemPrompt)
     );
   }, [baseline, form]);
 
@@ -88,7 +96,8 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
         targetCarbsG: parseOptionalNumber("carbs target", form.targetCarbsG, { min: 0 }),
         targetSleepHours: parseOptionalNumber("sleep target", form.targetSleepHours, { min: 0 }),
         targetTrainingSessions: parseOptionalNumber("training target", form.targetTrainingSessions, { min: 0, int: true }),
-        targetFibreG: parseOptionalNumber("fiber target", form.targetFibreG, { min: 0 })
+        targetFibreG: parseOptionalNumber("fiber target", form.targetFibreG, { min: 0 }),
+        insightsSystemPrompt: form.insightsSystemPrompt.trim() ? form.insightsSystemPrompt.trim() : null
       };
 
       const res = await fetch("/api/preferences", {
@@ -111,7 +120,8 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
           targetCarbsG: formatNumber(body.preferences.targetCarbsG),
           targetSleepHours: formatNumber(body.preferences.targetSleepHours),
           targetTrainingSessions: formatNumber(body.preferences.targetTrainingSessions),
-          targetFibreG: formatNumber(body.preferences.targetFibreG)
+          targetFibreG: formatNumber(body.preferences.targetFibreG),
+          insightsSystemPrompt: formatText(body.preferences.insightsSystemPrompt)
         });
         setBaseline(body.preferences);
       }
@@ -253,6 +263,21 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
             />
             <p className="field-hint">Helps spot cadence gaps.</p>
           </div>
+        </div>
+      </Card>
+
+      <Card title="Review prompt" subtitle="Customize the system prompt for your weekly review.">
+        <div className="field">
+          <label htmlFor="insightsSystemPrompt">System prompt</label>
+          <textarea
+            id="insightsSystemPrompt"
+            className="input textarea"
+            rows={6}
+            placeholder={INSIGHTS_DEFAULT_SYSTEM_PROMPT}
+            value={form.insightsSystemPrompt}
+            onChange={(event) => setField("insightsSystemPrompt", event.target.value)}
+          />
+          <p className="field-hint">Leave blank to use the default prompt.</p>
         </div>
       </Card>
 

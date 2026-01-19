@@ -3,6 +3,8 @@ import { prisma } from "../prisma.js";
 import { requireUserFromInternalRequest } from "../auth.js";
 import { loadEnv } from "../env.js";
 import { sanitizeInsightsMarkdown } from "../insights/sanitize.js";
+import { generateInsightsUnifiedDiff } from "../insights/llm.js";
+import { applyUnifiedDiff } from "../insights/patch.js";
 
 export async function insightsRoutes(app: FastifyInstance) {
   const env = loadEnv();
@@ -67,5 +69,71 @@ export async function insightsRoutes(app: FastifyInstance) {
           }
         : null
     };
+  });
+
+  app.post("/rerun", async (req, reply) => {
+    const user = await requireUserFromInternalRequest({ req, reply, env });
+    if (!user) return;
+
+    if (!env.INSIGHTS_ENABLED) {
+      return reply.code(400).send({ error: "insights_disabled" });
+    }
+
+    if (!env.OPENAI_API_KEY || !env.INSIGHTS_MODEL) {
+      return reply.code(400).send({ error: "insights_unavailable" });
+    }
+
+    const latestRun = await prisma.pipelineRun.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" }
+    });
+    if (!latestRun) {
+      return reply.code(404).send({ error: "no_pipeline_run" });
+    }
+
+    const prev = await prisma.insightsDoc.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" }
+    });
+
+    const previousMarkdown = prev?.markdown ?? "## Weekly synthesis\n- Awaiting next update.\n";
+
+    let nextMarkdown = previousMarkdown;
+    let diffFromPrev: string | null = null;
+
+    try {
+      const diff = await generateInsightsUnifiedDiff({
+        apiKey: env.OPENAI_API_KEY,
+        model: env.INSIGHTS_MODEL,
+        previousMarkdown,
+        metricsPack: latestRun.metricsPack,
+        systemPrompt: user.insightsSystemPrompt
+      });
+
+      nextMarkdown = applyUnifiedDiff({ previous: previousMarkdown, patch: diff });
+      diffFromPrev = prev ? diff : null;
+    } catch (err) {
+      return reply
+        .code(500)
+        .send({ error: err instanceof Error ? err.message : "failed_to_rerun" });
+    }
+
+    const sanitized = sanitizeInsightsMarkdown(nextMarkdown);
+    if (sanitized.changed) {
+      diffFromPrev = null;
+      nextMarkdown = sanitized.markdown;
+    }
+
+    const doc = await prisma.insightsDoc.create({
+      data: {
+        userId: user.id,
+        markdown: nextMarkdown,
+        diffFromPrev,
+        metricsPack: latestRun.metricsPack,
+        pipelineRunId: latestRun.id
+      }
+    });
+
+    return reply.code(200).send({ ok: true, docId: doc.id, pipelineRunId: latestRun.id });
   });
 }
