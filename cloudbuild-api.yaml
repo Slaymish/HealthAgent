@@ -36,3 +36,5 @@ images:
 substitutions:
   _SERVICE: health-agent-api
   _REGION: australia-southeast1
+options:
+  logging: CLOUD_LOGGING_ONLY
