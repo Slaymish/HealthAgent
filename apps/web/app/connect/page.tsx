@@ -35,7 +35,11 @@ export default async function ConnectPage() {
       <PageHeader
         title="Connect Apple Health"
         description="Generate a token and point your exporter at the endpoint."
-        meta={[{ label: "Endpoint", value: ingestUrl }]}
+        meta={[
+          { label: "Endpoint", value: ingestUrl },
+          { label: "User ID", value: session.user.id },
+          ...(user?.email ? [{ label: "Email", value: user.email }] : [])
+        ]}
       />
 
       <Grid columns={2}>
