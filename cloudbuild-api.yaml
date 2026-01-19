@@ -3,7 +3,7 @@ steps:
     entrypoint: bash
     args:
       - -lc
-      - corepack enable && pnpm -w install --frozen-lockfile --prod=false && pnpm --filter @health-agent/api exec prisma migrate deploy
+      - corepack enable && pnpm dlx prisma@5.22.0 migrate deploy --schema=apps/api/prisma/schema.prisma
     secretEnv:
       - DATABASE_URL
       - DATABASE_DIRECT_URL
