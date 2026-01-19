@@ -32,18 +32,20 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <Providers>
           <div className="app-shell">
-            <header className="top-bar">
-              <div className="brand">
-                <div>
-                  <div className="brand-title">Health Agent</div>
-                  <div className="brand-subtitle">Decide what to do next</div>
+            <div className="top-bar-wrap">
+              <header className="top-bar">
+                <div className="brand">
+                  <div>
+                    <div className="brand-title">Health Agent</div>
+                    <div className="brand-subtitle">Decide what to do next</div>
+                  </div>
                 </div>
-              </div>
-              <Nav />
-              <div className="actions">
-                <UserGreeting />
-              </div>
-            </header>
+                <Nav />
+                <div className="actions">
+                  <UserGreeting />
+                </div>
+              </header>
+            </div>
             <main className="page">{children}</main>
           </div>
         </Providers>
