@@ -1,13 +1,23 @@
 # HealthAgent
 
-HealthAgent ingests daily Apple Health exports (e.g. Health Auto Export JSON), stores raw payloads for audit/debug, parses into a canonical Postgres schema, computes a compact metrics pack, and (optionally) updates a living insights Markdown document via unified diff patches.
+HealthAgent turns daily Apple Health exports into a clean, opinionated health summary.
 
 - API: Fastify + Prisma (Postgres)
 - Web: Next.js App Router
 - Raw storage: local disk (dev) or GCS (cloud)
 - Auth: NextAuth (GitHub) with per-user ingest tokens and user-scoped data
 
-For a deeper “how it works” walkthrough, see [ONBOARDING.md](docs/ONBOARDING.md).
+Quick walkthrough: [ONBOARDING.md](docs/ONBOARDING.md).
+
+## What it does
+
+- Daily ingest → canonical tables → metrics pack
+- Optional weekly insights doc (diff-based)
+- UI focused on trend + next actions
+
+## Screenshot
+
+![HealthAgent dashboard](docs/status_screenshot.png)
 
 ## Repo layout
 
@@ -33,9 +43,22 @@ pnpm dev
 - API: http://localhost:3001/health
 - Web: http://localhost:3000
 
-Tip: the API loads dotenv from `apps/api/.env`.
-The API now runs `prisma migrate deploy` on startup to ensure tables (including NextAuth tables) exist; set `PRISMA_MIGRATE_ON_START=false` if you need to skip this and manage migrations manually.
-Make sure `INTERNAL_API_KEY` matches in both `.env` files and set `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` to enable sign-in.
+Notes:
+- API loads dotenv from `apps/api/.env`.
+- Set `INTERNAL_API_KEY` in both `.env` files.
+
+## Try it quickly (sample data)
+
+This repo includes a small Health Auto Export sample. It will write the sample into local storage and run the full pipeline:
+
+```bash
+pnpm --filter @health-agent/api seed:sample
+```
+
+Then open:
+
+- Dashboard: http://localhost:3000
+- Insights: http://localhost:3000/insights
 
 ## Key endpoints
 
@@ -69,26 +92,15 @@ See `.env.example` for the full list. Common ones:
 
 GCP deployment (Cloud Run + GCS + Cloud Scheduler + external/serverless Postgres like Neon) is documented in [DEPLOY_GCP.md](docs/DEPLOY_GCP.md).
 
-## Budget mode (<$10/month)
+## Cost notes (<$10/month)
 
-Cloud SQL is convenient, but it’s easy to accidentally pay for **24/7 instance uptime** even if you’re not using the app. If you want to keep this project under a strict hobby budget, prefer one of these approaches:
+- Cheapest: run local only.
+- If cloud: prefer serverless Postgres + pay-per-use compute.
+- Cloud SQL is always-on; set a billing alert if you use it.
 
-### Option A (cheapest): no cloud, run locally
+## Docs
 
-- Use the local Postgres via `pnpm db:up` and keep `STORAGE_PROVIDER=local`.
-- Run the API/web only when you need them (`pnpm dev`) and run the pipeline on demand.
-- Cost: effectively $0 (aside from your own machine).
-
-### Option B: one small VPS running everything
-
-- Run Postgres + API + web on a single small VM with Docker.
-- Use local disk for raw storage.
-- This avoids managed database pricing, at the cost of you owning updates/backups.
-
-### Option C: serverless Postgres + pay-per-use compute
-
-- Keep Postgres on a serverless/free-tier provider (set `DATABASE_URL` accordingly).
-- Run API/web on a pay-per-use/free-tier host.
-- This keeps “always-on database VM” costs out of your bill while preserving a Postgres backend for Prisma.
-
-If you choose to use Cloud SQL on GCP anyway, set a Billing budget/alert and double-check whether your instance is HA/regional and whether automated backups/retention are enabled.
+- [Onboarding guide](docs/ONBOARDING.md)
+- [GCP deployment](docs/DEPLOY_GCP.md)
+- [Frontend style guide](docs/STYLE_GUIDE.md)
+- [Project status](docs/tasks.md)

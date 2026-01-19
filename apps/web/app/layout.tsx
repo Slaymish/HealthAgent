@@ -35,6 +35,20 @@ export default function RootLayout({
             <div className="top-bar-wrap">
               <header className="top-bar">
                 <div className="brand">
+                  <svg
+                    className="brand-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3 a9 9 0 1 1 -6.36 2.64" />
+                    <circle cx="16.5" cy="7.5" r="1.5" />
+                  </svg>
                   <div>
                     <div className="brand-title">Health Agent</div>
                     <div className="brand-subtitle">Decide what to do next</div>
