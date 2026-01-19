@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ClipboardList, FileClock, NotebookText } from "lucide-react";
 import { Badge, Card, PageHeader } from "../components/ui";
 import { demoInsightsHistory, demoInsightsLatest } from "../demo-data";
 import { formatDateTime } from "../lib/format";
@@ -99,7 +100,7 @@ export default async function InsightsPage() {
       />
 
       {!latest.latest ? (
-          <Card title="No insights yet" subtitle="Run the pipeline to generate a synthesis.">
+          <Card title="No insights yet" subtitle="Run the pipeline to generate a synthesis." icon={<ClipboardList aria-hidden="true" />}>
             <div className="stack">
               <p className="muted">After a run, you will see the weekly summary here.</p>
               <Link className="button" href="/">
@@ -112,6 +113,7 @@ export default async function InsightsPage() {
           <Card
             title="Weekly synthesis"
             subtitle="Summary with supporting signals."
+            icon={<NotebookText aria-hidden="true" />}
             action={<Badge tone="neutral">Doc {latest.latest.id}</Badge>}
           >
             <div className="stack">
@@ -128,7 +130,7 @@ export default async function InsightsPage() {
         </>
       )}
 
-      <Card title="History" subtitle="Recent documents and sources.">
+      <Card title="History" subtitle="Recent documents and sources." icon={<FileClock aria-hidden="true" />}>
         {history.docs.length === 0 ? (
           <p className="muted">No history to show yet.</p>
         ) : (

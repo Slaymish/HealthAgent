@@ -1,4 +1,5 @@
 import { Badge, Card, Grid, PageHeader, Stat } from "../components/ui";
+import { CalendarX2, Database, FileClock, PackageCheck } from "lucide-react";
 import { demoDataQuality } from "../demo-data";
 import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
@@ -72,24 +73,24 @@ export default async function DataQualityPage() {
       />
 
       <Grid columns={2}>
-        <Card title="Ingest freshness" subtitle="Latest ingest timing.">
+        <Card title="Ingest freshness" subtitle="Latest ingest timing." icon={<FileClock aria-hidden="true" />}>
           {data.lastIngest ? (
             <div className="stack">
-              <Stat label="Ingest id" value={data.lastIngest.id} hint={`Source: ${data.lastIngest.source}`} />
-              <Stat label="Received" value={formatDateTime(data.lastIngest.receivedAt)} />
-              <Stat label="Processed" value={formatDateTime(data.lastIngest.processedAt)} />
+              <Stat label="Ingest id" value={data.lastIngest.id} hint={`Source: ${data.lastIngest.source}`} icon={<PackageCheck aria-hidden="true" />} />
+              <Stat label="Received" value={formatDateTime(data.lastIngest.receivedAt)} icon={<FileClock aria-hidden="true" />} />
+              <Stat label="Processed" value={formatDateTime(data.lastIngest.processedAt)} icon={<Database aria-hidden="true" />} />
             </div>
           ) : (
             <p className="muted">No ingests have been received yet.</p>
           )}
         </Card>
 
-        <Card title="Pipeline coverage" subtitle="Latest run and ingests processed.">
+        <Card title="Pipeline coverage" subtitle="Latest run and ingests processed." icon={<Database aria-hidden="true" />}>
           {data.lastPipelineRun ? (
             <div className="stack">
-              <Stat label="Run id" value={data.lastPipelineRun.id} />
-              <Stat label="Created" value={formatDateTime(data.lastPipelineRun.createdAt)} />
-              <Stat label="Processed ingests" value={data.lastPipelineRun.processedIngestCount ?? "—"} />
+              <Stat label="Run id" value={data.lastPipelineRun.id} icon={<PackageCheck aria-hidden="true" />} />
+              <Stat label="Created" value={formatDateTime(data.lastPipelineRun.createdAt)} icon={<FileClock aria-hidden="true" />} />
+              <Stat label="Processed ingests" value={data.lastPipelineRun.processedIngestCount ?? "—"} icon={<Database aria-hidden="true" />} />
             </div>
           ) : (
             <p className="muted">No pipeline runs yet.</p>
@@ -97,7 +98,7 @@ export default async function DataQualityPage() {
         </Card>
       </Grid>
 
-      <Card title="Missing days" subtitle="Gaps in the last 14 days.">
+      <Card title="Missing days" subtitle="Gaps in the last 14 days." icon={<CalendarX2 aria-hidden="true" />}>
         <div className="grid cols-2">
           {renderMissing("Weight", data.missingDays.weight)}
           {renderMissing("Nutrition", data.missingDays.nutrition)}

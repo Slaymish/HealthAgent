@@ -1,4 +1,19 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import {
+  Activity,
+  Clock,
+  Flame,
+  Gauge,
+  History,
+  Moon,
+  Scale,
+  ShieldAlert,
+  SlidersHorizontal,
+  Sparkles,
+  Target,
+  Wrench
+} from "lucide-react";
 import { Badge, Card, Grid, PageHeader, Stat } from "./components/ui";
 import { demoPipelineLatest } from "./demo-data";
 import { formatDateTime, formatDelta, formatMinutes, formatNumber, type DeltaTone } from "./lib/format";
@@ -23,18 +38,23 @@ function GlanceSignal({
   value,
   hint,
   delta,
-  link
+  link,
+  icon
 }: {
   title: string;
   value: string;
   hint?: string;
   delta?: { text: string; tone: DeltaTone };
   link?: string;
+  icon?: ReactNode;
 }) {
   return (
     <div className="glance-block">
       <div className="glance-block__header">
-        <h4 className="glance-title">{title}</h4>
+        <div className="glance-title-row">
+          {icon ? <span className="icon-muted">{icon}</span> : null}
+          <h4 className="glance-title">{title}</h4>
+        </div>
         {delta ? <span className={`delta ${delta.tone === "neutral" ? "" : delta.tone}`.trim()}>{delta.text}</span> : null}
       </div>
       <div className="glance-value">{value}</div>
@@ -200,7 +220,8 @@ export default async function HomePage() {
         goodDirection: "up"
       }),
       hint: "Keep nightly variance tight to steady hunger and recovery.",
-      link: "/trends"
+      link: "/trends",
+      icon: <Moon aria-hidden="true" />
     },
     {
       title: "Training cadence",
@@ -210,7 +231,8 @@ export default async function HomePage() {
         goodDirection: "up"
       }),
       hint: trainingMinutes7 != null ? `${formatMinutes(trainingMinutes7)} total minutes.` : undefined,
-      link: "/trends"
+      link: "/trends",
+      icon: <Activity aria-hidden="true" />
     }
   ];
 
@@ -293,6 +315,7 @@ export default async function HomePage() {
           <Card
             title="Energy balance signal"
             subtitle="Fast read on deficit vs surplus."
+            icon={<Gauge aria-hidden="true" />}
             action={<Badge tone={energyBalanceStatus.tone}>{energyBalanceStatus.label}</Badge>}
           >
             <Grid columns={2}>
@@ -300,17 +323,19 @@ export default async function HomePage() {
                 label="Weight trend (14d)"
                 value={weightSlope14 != null ? `${formatNumber(weightSlope14, 3)} kg/day` : "No recent readings"}
                 hint={projectionHint}
+                icon={<Scale aria-hidden="true" />}
               />
               <Stat
                 label="Calories (7d)"
                 value={calories7 != null ? `${formatNumber(calories7, 0)} avg kcal` : "No recent logs"}
                 hint={energyBalanceHint}
+                icon={<Flame aria-hidden="true" />}
               />
             </Grid>
           </Card>
 
           {confidenceNotes.length ? (
-            <Card title="Signal confidence" subtitle="Where signals may be soft.">
+            <Card title="Signal confidence" subtitle="Where signals may be soft." icon={<ShieldAlert aria-hidden="true" />}>
               <div className="stack">
                 {confidenceNotes.map((note) => (
                   <div key={note} className="callout warn">
@@ -325,6 +350,7 @@ export default async function HomePage() {
             <Card
               title="Status"
               subtitle="Goal pace + projection."
+              icon={<Target aria-hidden="true" />}
               action={<Badge tone={goalBadge.tone}>{goalBadge.label}</Badge>}
             >
               <div className="stack">
@@ -350,11 +376,12 @@ export default async function HomePage() {
             <Card
               title="System health"
               subtitle="Ingestion + processing flow."
+              icon={<Activity aria-hidden="true" />}
               action={<Badge tone="neutral">Run {data.latestRun.id}</Badge>}
             >
               <div className="stack">
-                <Stat label="Created" value={formatDateTime(data.latestRun.createdAt)} />
-                <Stat label="Processed ingest files" value={data.latestRun.processedIngestCount ?? "—"} />
+                <Stat label="Created" value={formatDateTime(data.latestRun.createdAt)} icon={<Clock aria-hidden="true" />} />
+                <Stat label="Processed ingest files" value={data.latestRun.processedIngestCount ?? "—"} icon={<Sparkles aria-hidden="true" />} />
                 <details className="raw-toggle">
                   <summary>Raw meta</summary>
                   <p className="muted">Generated at: {formatDateTime(pack?.generatedAt ?? null)}</p>
@@ -364,15 +391,23 @@ export default async function HomePage() {
             </Card>
           </Grid>
 
-          <Card title="Secondary signals" subtitle="Sleep + training context.">
+          <Card title="Secondary signals" subtitle="Sleep + training context." icon={<Sparkles aria-hidden="true" />}>
             <div className="glance-grid">
               {headlineSignals.map((signal) => (
-                <GlanceSignal key={signal.title} title={signal.title} value={signal.value} hint={signal.hint} delta={signal.delta} link={signal.link} />
+                <GlanceSignal
+                  key={signal.title}
+                  title={signal.title}
+                  value={signal.value}
+                  hint={signal.hint}
+                  delta={signal.delta}
+                  link={signal.link}
+                  icon={signal.icon}
+                />
               ))}
             </div>
           </Card>
 
-          <Card title="Since last week" subtitle="Changes and evidence links.">
+          <Card title="Since last week" subtitle="Changes and evidence links." icon={<History aria-hidden="true" />}>
             <ul className="change-list">
               {changeSummary.map((item) => (
                 <ChangeItem key={item.title} title={item.title} detail={item.detail} tone={item.tone} link={item.link} />
@@ -380,7 +415,7 @@ export default async function HomePage() {
             </ul>
           </Card>
 
-          <Card title="Key levers" subtitle="Highest impact actions.">
+          <Card title="Key levers" subtitle="Highest impact actions." icon={<SlidersHorizontal aria-hidden="true" />}>
             {leverCards.length ? (
               <div className="lever-grid">
                 {leverCards.map((lever) => (
@@ -392,7 +427,7 @@ export default async function HomePage() {
             )}
           </Card>
 
-          <Card title="Tools" subtitle="Evidence and raw data.">
+          <Card title="Tools" subtitle="Evidence and raw data." icon={<Wrench aria-hidden="true" />}>
             <div className="list-inline">
               <Link className="button" href="/trends">
                 Trends

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card } from "../components/ui";
+import { Apple, HeartPulse, Target } from "lucide-react";
 
 type Preferences = {
   targetWeightKg: number | null;
@@ -126,7 +127,7 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
 
   return (
     <form className="stack" onSubmit={handleSubmit}>
-      <Card title="Goal targets" subtitle="Used for projections.">
+      <Card title="Goal targets" subtitle="Used for projections." icon={<Target aria-hidden="true" />}>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="targetWeightKg">Target weight (kg)</label>
@@ -145,7 +146,7 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
         </div>
       </Card>
 
-      <Card title="MacroFactor targets" subtitle="Optional macros.">
+      <Card title="MacroFactor targets" subtitle="Optional macros." icon={<Apple aria-hidden="true" />}>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="targetCalories">Target calories (kcal)</label>
@@ -221,7 +222,7 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
         </div>
       </Card>
 
-      <Card title="Recovery + training" subtitle="Baselines for sleep + cadence.">
+      <Card title="Recovery + training" subtitle="Baselines for sleep + cadence." icon={<HeartPulse aria-hidden="true" />}>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="targetSleepHours">Sleep target (hours)</label>

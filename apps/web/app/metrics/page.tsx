@@ -1,4 +1,5 @@
 import { Card, PageHeader, Stat } from "../components/ui";
+import { FileClock, FileJson, Hash, Package, Timer } from "lucide-react";
 import { demoPipelineLatest } from "../demo-data";
 import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
@@ -52,15 +53,15 @@ export default async function MetricsPage() {
 
       {data.latestRun ? (
         <>
-          <Card title="Run details" subtitle="Quick context.">
+          <Card title="Run details" subtitle="Quick context." icon={<FileClock aria-hidden="true" />}>
             <div className="grid cols-2">
-              <Stat label="Run id" value={data.latestRun.id} />
-              <Stat label="Created" value={formatDateTime(data.latestRun.createdAt)} />
-              <Stat label="Processed ingests" value={data.latestRun.processedIngestCount ?? "—"} />
+              <Stat label="Run id" value={data.latestRun.id} icon={<Hash aria-hidden="true" />} />
+              <Stat label="Created" value={formatDateTime(data.latestRun.createdAt)} icon={<Timer aria-hidden="true" />} />
+              <Stat label="Processed ingests" value={data.latestRun.processedIngestCount ?? "—"} icon={<Package aria-hidden="true" />} />
             </div>
           </Card>
 
-          <Card title="Metrics pack" subtitle="Full payload.">
+          <Card title="Metrics pack" subtitle="Full payload." icon={<FileJson aria-hidden="true" />}>
             <details className="code-details">
               <summary className="code-summary">View raw JSON</summary>
               <pre className="code-block">{JSON.stringify(data.latestRun.metricsPack, null, 2)}</pre>

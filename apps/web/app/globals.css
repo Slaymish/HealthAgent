@@ -208,6 +208,14 @@ h4 {
   font-weight: 600;
   font-size: 14px;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link svg {
+  width: 16px;
+  height: 16px;
 }
 
 .nav-link:hover {
@@ -324,6 +332,17 @@ h4 {
 
 .card-title {
   font-size: 20px;
+}
+
+.card-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title-row .icon-muted svg {
+  width: 18px;
+  height: 18px;
 }
 
 .card-subtitle {
@@ -853,6 +872,22 @@ h4 {
   font-weight: 600;
 }
 
+.stat-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-muted {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.icon-muted svg {
+  width: 16px;
+  height: 16px;
+}
+
 .stat-value {
   font-size: clamp(20px, 2vw, 28px);
   font-weight: 600;
@@ -884,6 +919,12 @@ h4 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.glance-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .glance-title {

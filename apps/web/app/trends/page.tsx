@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Dumbbell, FileSearch, Moon, Scale, TrendingUp, Utensils } from "lucide-react";
 import { Card, PageHeader } from "../components/ui";
 import { demoPipelineLatest } from "../demo-data";
 import { formatDateTime, formatDelta, formatMinutes, formatNumber } from "../lib/format";
@@ -49,6 +50,7 @@ function TrendCard({
   value,
   delta,
   hint,
+  icon,
   children
 }: {
   title: string;
@@ -56,10 +58,11 @@ function TrendCard({
   value: string;
   delta?: { text: string; tone: "positive" | "negative" | "warn" | "neutral" };
   hint?: string;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <Card title={title} subtitle={subtitle}>
+    <Card title={title} subtitle={subtitle} icon={icon}>
       <div className="stack">
         <div className="glance-block">
           <div className="glance-block__header">
@@ -188,7 +191,7 @@ export default async function TrendsPage() {
         </Card>
       ) : (
         <>
-          <Card title="Headline momentum" subtitle="Week-over-week deltas.">
+          <Card title="Headline momentum" subtitle="Week-over-week deltas." icon={<TrendingUp aria-hidden="true" />}>
             <div className="summary-strip">
               {summaryChips.map((chip) => (
                 <span key={chip.label} className="summary-chip">
@@ -208,6 +211,7 @@ export default async function TrendsPage() {
               value={weightSlope14 != null ? `${formatNumber(weightSlope14, 3)} kg/day (14d)` : "No recent readings"}
               delta={formatDelta(weightSlope7, weightSlope14, "kg/day", { precision: 3, goodDirection: "down" })}
               hint="Weekly slope vs last week."
+              icon={<Scale aria-hidden="true" />}
             >
               <Sparkline values={weightSeries.map((point) => point.weightKg).filter((value) => value != null)} />
               <details className="raw-toggle">
@@ -228,6 +232,7 @@ export default async function TrendsPage() {
               value={calories7 != null ? `${formatNumber(calories7, 0)} kcal (7d)` : "No recent logs"}
               delta={formatDelta(calories7, calories14, "kcal", { precision: 0, goodDirection: "down" })}
               hint={protein7 != null ? `Protein ${formatNumber(protein7, 0)}g (7d).` : undefined}
+              icon={<Utensils aria-hidden="true" />}
             >
               <Sparkline
                 values={nutritionSeries
@@ -253,6 +258,7 @@ export default async function TrendsPage() {
               value={sleepAvg7 != null ? `${formatMinutes(sleepAvg7)} (7d)` : "No sleep captured"}
               delta={formatDelta(sleepAvg7, sleepAvg14, "min", { precision: 0, goodDirection: "up" })}
               hint="Keep nightly variance tight."
+              icon={<Moon aria-hidden="true" />}
             >
               <Sparkline values={sleepSeries.map((point) => point.minutes).filter((value) => value != null)} />
               <details className="raw-toggle">
@@ -273,6 +279,7 @@ export default async function TrendsPage() {
               value={trainingSessions7 != null ? `${formatNumber(trainingSessions7, 0)} sessions (7d)` : "No training logged"}
               delta={formatDelta(trainingSessions7, trainingSessions14, "sessions", { precision: 0, goodDirection: "up" })}
               hint={pack?.training?.minutes7 ? `${formatMinutes(pack.training.minutes7)} total minutes.` : undefined}
+              icon={<Dumbbell aria-hidden="true" />}
             >
               <Sparkline values={trainingSeries.map((point) => point.minutes).filter((value) => value != null)} />
               <details className="raw-toggle">
@@ -288,7 +295,7 @@ export default async function TrendsPage() {
             </TrendCard>
           </div>
 
-          <Card title="Debug details" subtitle="Raw metrics pack.">
+          <Card title="Debug details" subtitle="Raw metrics pack." icon={<FileSearch aria-hidden="true" />}>
             <details className="raw-toggle">
               <summary>View raw pack</summary>
               <pre className="code-block">{JSON.stringify(pack, null, 2)}</pre>

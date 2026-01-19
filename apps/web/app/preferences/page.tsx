@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Paintbrush } from "lucide-react";
 import { Card, PageHeader } from "../components/ui";
 import ThemeToggle from "../components/theme-toggle";
 import { getSessionOrNull } from "../lib/session";
@@ -35,7 +36,7 @@ export default async function PreferencesPage() {
         title="Preferences"
         description="Set targets for projections and baselines."
       />
-      <Card title="Appearance" subtitle="Choose your theme." action={<ThemeToggle />}>
+      <Card title="Appearance" subtitle="Choose your theme." icon={<Paintbrush aria-hidden="true" />} action={<ThemeToggle />}>
         <p className="muted">Toggle light or dark mode.</p>
       </Card>
       {needsSignIn ? (

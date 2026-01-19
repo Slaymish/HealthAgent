@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { Activity, ClipboardCheck, Database, PlugZap, Settings2, TrendingUp } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthButton from "./auth-button";
 import SyncButton from "./sync-button";
 
 const links = [
-  { href: "/", label: "Status" },
-  { href: "/insights", label: "Review" },
-  { href: "/trends", label: "Trends" },
-  { href: "/data-quality", label: "Data" },
-  { href: "/preferences", label: "Preferences" },
-  { href: "/connect", label: "Connect" }
+  { href: "/", label: "Status", icon: Activity },
+  { href: "/insights", label: "Review", icon: ClipboardCheck },
+  { href: "/trends", label: "Trends", icon: TrendingUp },
+  { href: "/data-quality", label: "Data", icon: Database },
+  { href: "/preferences", label: "Preferences", icon: Settings2 },
+  { href: "/connect", label: "Connect", icon: PlugZap }
 ];
 
 export default function Nav() {
@@ -47,8 +48,10 @@ export default function Nav() {
       <div id="primary-navigation" className="nav-links" aria-hidden={!isOpen}>
         {links.map((link) => {
           const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+          const Icon = link.icon;
           return (
             <Link key={link.href} className={`nav-link${isActive ? " is-active" : ""}`} href={link.href}>
+              <Icon aria-hidden="true" />
               {link.label}
             </Link>
           );

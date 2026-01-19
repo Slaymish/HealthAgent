@@ -35,11 +35,13 @@ export function Card({
   title,
   subtitle,
   action,
+  icon,
   children
 }: {
   title?: string;
   subtitle?: string;
   action?: ReactNode;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -47,7 +49,12 @@ export function Card({
       {(title || subtitle || action) && (
         <div className="card-header">
           <div>
-            {title ? <h3 className="card-title">{title}</h3> : null}
+            {title ? (
+              <div className="card-title-row">
+                {icon ? <span className="icon-muted">{icon}</span> : null}
+                <h3 className="card-title">{title}</h3>
+              </div>
+            ) : null}
             {subtitle ? <p className="card-subtitle">{subtitle}</p> : null}
           </div>
           {action ? <div>{action}</div> : null}
@@ -61,16 +68,21 @@ export function Card({
 export function Stat({
   label,
   value,
-  hint
+  hint,
+  icon
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
+  icon?: ReactNode;
 }) {
   return (
     <div className="stat">
       <div>
-        <div className="stat-label">{label}</div>
+        <div className="stat-label-row">
+          {icon ? <span className="icon-muted">{icon}</span> : null}
+          <span className="stat-label">{label}</span>
+        </div>
         {hint ? <div className="hint">{hint}</div> : null}
       </div>
       <div className="stat-value">{value}</div>

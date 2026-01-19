@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { KeyRound, ListChecks, PlugZap } from "lucide-react";
 import { Card, Grid, PageHeader } from "../components/ui";
 import { getSessionOrNull } from "../lib/session";
 import { prisma } from "../lib/prisma";
@@ -15,7 +16,7 @@ export default async function ConnectPage() {
     return (
       <div className="section">
         <PageHeader title="Connect Apple Health" description="Sign in to generate an ingest token." />
-        <Card title="Sign in to connect">
+        <Card title="Sign in to connect" icon={<PlugZap aria-hidden="true" />}>
           <p className="muted">Create a GitHub session to generate your ingest token.</p>
           <Link className="button" href="/api/auth/signin">
             Sign in with GitHub
@@ -43,11 +44,11 @@ export default async function ConnectPage() {
       />
 
       <Grid columns={2}>
-        <Card title="Your ingest token" subtitle="Generate a token for exports.">
+        <Card title="Your ingest token" subtitle="Generate a token for exports." icon={<KeyRound aria-hidden="true" />}>
           <TokenManager initialPreview={user?.ingestTokenPreview ?? null} ingestUrl={ingestUrl} />
         </Card>
 
-        <Card title="Setup steps" subtitle="Point your exporter at the ingest endpoint.">
+        <Card title="Setup steps" subtitle="Point your exporter at the ingest endpoint." icon={<ListChecks aria-hidden="true" />}>
           <ol className="list">
             <li>Open your exporter (e.g., Health Auto Export) and add a REST target.</li>
             <li>Set the URL to <code>{ingestUrl}</code>.</li>
