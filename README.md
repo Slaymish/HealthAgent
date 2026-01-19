@@ -17,7 +17,7 @@ Quick walkthrough: [ONBOARDING.md](docs/ONBOARDING.md).
 
 ## Screenshot
 
-![HealthAgent dashboard](docs/status_screenshot.png)
+![HealthAgent](docs/status_screenshot.png)
 
 ## Repo layout
 
