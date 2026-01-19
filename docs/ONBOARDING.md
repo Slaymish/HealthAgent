@@ -122,7 +122,7 @@ What happens:
    - Upsert into canonical tables in a transaction
    - Mark the ingest file as processed (`processed_at = now()`)
 4. Compute the **metrics pack** (7/14/28-day summaries + trend series).
-5. Compute a goal projection (estimate when the target weight is reached at the current trend) if `GOAL_TARGET_WEIGHT_KG` is set.
+5. Compute a goal projection (estimate when the target weight is reached at the current trend) if a user target weight is set in Preferences.
 6. Insert a `pipeline_runs` row with the metrics pack.
 7. Update the living **insights doc**:
    - If there is no previous doc: create `# Insights\n\n`

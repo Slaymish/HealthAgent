@@ -35,7 +35,6 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   INSIGHTS_MODEL: z.string().optional(),
 
-  GOAL_TARGET_WEIGHT_KG: z.coerce.number().positive().optional()
 })
   .refine(
     (v) => (v.STORAGE_PROVIDER === "gcs" ? typeof v.STORAGE_BUCKET === "string" && v.STORAGE_BUCKET.length > 0 : true),

@@ -18,6 +18,14 @@ model User {
   ingestTokenPreview String   @map("ingest_token_preview")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
+  targetWeightKg Float? @map("target_weight_kg")
+  targetCalories Int? @map("target_calories")
+  targetProteinG Float? @map("target_protein_g")
+  targetFatG Float? @map("target_fat_g")
+  targetCarbsG Float? @map("target_carbs_g")
+  targetSleepHours Float? @map("target_sleep_hours")
+  targetTrainingSessions Int? @map("target_training_sessions")
+  targetFibreG Float? @map("target_fibre_g")
 
   accounts    Account[]
   sessions    Session[]

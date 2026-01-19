@@ -347,7 +347,7 @@ export default async function HomePage() {
                   </div>
                 ) : (
                   <p className="muted">
-                    Add <code>GOAL_TARGET_WEIGHT_KG</code> to the API environment to enable projected timelines.
+                    Set a target weight in <Link className="chip" href="/preferences">Preferences</Link> to enable projected timelines.
                   </p>
                 )}
               </div>

@@ -169,12 +169,9 @@ async function computeMetricsPack(userId: string, now = new Date()) {
   };
 }
 
-function computeGoalProjection(params: {
-  env: ReturnType<typeof loadEnv>;
-  metricsPack: any;
-}): any {
-  const { env, metricsPack } = params;
-  if (!env.GOAL_TARGET_WEIGHT_KG) return null;
+function computeGoalProjection(params: { targetWeightKg?: number | null; metricsPack: any }): any {
+  const { targetWeightKg, metricsPack } = params;
+  if (!targetWeightKg) return null;
   const latest = metricsPack.weight?.latest;
   if (!latest || typeof latest.weightKg !== "number") return null;
 
@@ -187,7 +184,7 @@ function computeGoalProjection(params: {
       : null;
   const observedSlopeKgPerDay14 = typeof observed === "number" ? observed : null;
 
-  const deltaToGoalKg = env.GOAL_TARGET_WEIGHT_KG - latest.weightKg;
+  const deltaToGoalKg = targetWeightKg - latest.weightKg;
   const trend =
     deltaToGoalKg === 0
       ? "at-goal"
@@ -211,7 +208,7 @@ function computeGoalProjection(params: {
   }
 
   return {
-    targetWeightKg: env.GOAL_TARGET_WEIGHT_KG,
+    targetWeightKg,
     observedSlopeKgPerDay14,
     observedSlopeKgPerWeek: observedSlopeKgPerDay14 != null ? observedSlopeKgPerDay14 * 7 : null,
     deltaToGoalKg,
@@ -260,13 +257,17 @@ export async function pipelineRoutes(app: FastifyInstance) {
       orderBy: { createdAt: "desc" }
     });
 
+    const latestPack = latest?.metricsPack as any;
+    const goalProjection = latestPack ? computeGoalProjection({ targetWeightKg: user.targetWeightKg, metricsPack: latestPack }) : null;
+    const metricsPack = latestPack ? { ...latestPack, goalProjection } : null;
+
     return {
       latestRun: latest
         ? {
             id: latest.id,
             createdAt: latest.createdAt,
             processedIngestCount: latest.processedIngestCount,
-            metricsPack: latest.metricsPack
+            metricsPack
           }
         : null
     };
@@ -413,7 +414,7 @@ export async function pipelineRoutes(app: FastifyInstance) {
     }
 
     const metricsPack = await computeMetricsPack(user.id);
-    const goalProjection = computeGoalProjection({ env, metricsPack: metricsPack as any });
+    const goalProjection = computeGoalProjection({ targetWeightKg: user.targetWeightKg, metricsPack: metricsPack as any });
     const metricsPackWithGoal = {
       ...(metricsPack as any),
       goalProjection
