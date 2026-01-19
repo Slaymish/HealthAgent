@@ -765,39 +765,61 @@ footer {
     width: 100%;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
   }
 
   .nav-toggle {
     display: inline-flex;
+    width: 100%;
+    justify-content: space-between;
   }
 
   .nav-links {
     width: 100%;
-    flex-direction: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
     display: none;
-    padding: 12px;
+    padding: 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
     background: var(--panel-soft);
-    gap: 8px;
+    gap: 10px;
   }
 
   .nav.is-open .nav-links {
-    display: flex;
+    display: grid;
   }
 
   .nav-link {
     padding: 12px 14px;
     border-color: var(--border);
     background: var(--panel);
+    text-align: center;
   }
 
   .actions {
     width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    justify-content: stretch;
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+
+  .actions .button,
+  .actions .icon-button,
+  .actions .greeting {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .actions .greeting {
+    grid-column: 1 / -1;
+    text-align: center;
   }
 
   .page-heading {
