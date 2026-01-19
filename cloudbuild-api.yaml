@@ -44,8 +44,8 @@ images:
 substitutions:
   _SERVICE: health-agent-api
   _REGION: australia-southeast1
-  _DATABASE_URL_SECRET: DATABASE_URL
-  _DATABASE_DIRECT_URL_SECRET: DATABASE_DIRECT_URL
+  _DATABASE_URL_SECRET: health-agent-database-url
+  _DATABASE_DIRECT_URL_SECRET: health-agent-database-direct-url
 options:
   logging: CLOUD_LOGGING_ONLY
 availableSecrets:
