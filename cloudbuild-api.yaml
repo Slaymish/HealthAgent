@@ -17,6 +17,22 @@ steps:
     args:
       - push
       - gcr.io/$PROJECT_ID/health-agent-api:latest
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE
+      - --image
+      - gcr.io/$PROJECT_ID/health-agent-api:$BUILD_ID
+      - --region
+      - $_REGION
+      - --platform
+      - managed
+      - --quiet
 images:
   - gcr.io/$PROJECT_ID/health-agent-api:$BUILD_ID
   - gcr.io/$PROJECT_ID/health-agent-api:latest
+substitutions:
+  _SERVICE: health-agent-api
+  _REGION: australia-southeast1
