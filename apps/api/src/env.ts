@@ -3,7 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   INGEST_TOKEN: z.string().min(1).optional(),
   INTERNAL_API_KEY: z.string().min(1).default("dev-internal-key"),
-  API_PORT: z.coerce.number().int().positive().default(3001),
+  API_PORT: z.coerce.number().int().positive().default(process.env.PORT ? Number(process.env.PORT) : 8080),
 
   PIPELINE_TOKEN: z.string().optional(),
 
