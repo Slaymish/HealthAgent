@@ -35,7 +35,8 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   INSIGHTS_MODEL: z.string().optional(),
   TINKER_MODEL_PATH: z.string().optional().default("tinker://1bdf299a-25aa-5110-877d-9ce6c42f64af:train:0/sampler_weights/insights-agent-model"),
-  TINKER_BRIDGE_CMD: z.string().optional().default("python3")
+  TINKER_BRIDGE_CMD: z.string().optional().default("python3"),
+  TINKER_API_KEY: z.string().optional()
 
 })
   .refine(

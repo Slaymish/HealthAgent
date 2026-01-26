@@ -37,6 +37,12 @@ steps:
       - $_REGION
       - --platform
       - managed
+      - --set-secrets
+      - DATABASE_URL=${_DATABASE_URL_SECRET}:latest
+      - --set-secrets
+      - DATABASE_DIRECT_URL=${_DATABASE_DIRECT_URL_SECRET}:latest
+      - --set-secrets
+      - TINKER_API_KEY=${_TINKER_API_KEY_SECRET}:latest
       - --quiet
 images:
   - gcr.io/$PROJECT_ID/health-agent-api:$BUILD_ID
@@ -44,6 +50,7 @@ images:
 substitutions:
   _SERVICE: health-agent-api
   _REGION: australia-southeast1
+  _TINKER_API_KEY_SECRET: tinker-api-key
   _DATABASE_URL_SECRET: health-agent-database-url
   _DATABASE_DIRECT_URL_SECRET: health-agent-database-direct-url
 options:
