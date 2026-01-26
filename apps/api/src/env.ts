@@ -19,7 +19,7 @@ const envSchema = z.object({
       }
       return undefined;
     }, z.boolean().optional())
-    .default(true),
+    .default(false),
 
   STORAGE_PROVIDER: z.enum(["local", "gcs"]).default("local"),
   STORAGE_LOCAL_DIR: z.string().default("storage/local"),
