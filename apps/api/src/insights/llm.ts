@@ -1,17 +1,11 @@
-import { z } from "zod";
+import { execSync } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
 import { INSIGHTS_DEFAULT_SYSTEM_PROMPT } from "@health-agent/shared";
+import { loadEnv } from "../env.js";
 
-const chatResponseSchema = z.object({
-  choices: z
-    .array(
-      z.object({
-        message: z.object({
-          content: z.string().nullable().optional()
-        })
-      })
-    )
-    .min(1)
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function generateInsightsUnifiedDiff(params: {
   apiKey: string;
@@ -20,7 +14,7 @@ export async function generateInsightsUnifiedDiff(params: {
   metricsPack: unknown;
   systemPrompt?: string | null;
 }): Promise<string> {
-  const { apiKey, model, previousMarkdown, metricsPack, systemPrompt } = params;
+  const { previousMarkdown, metricsPack, systemPrompt } = params;
 
   const baseSystem = INSIGHTS_DEFAULT_SYSTEM_PROMPT;
   const trimmedSystemPrompt = systemPrompt?.trim();
@@ -49,39 +43,18 @@ export async function generateInsightsUnifiedDiff(params: {
     "PREVIOUS MARKDOWN:\n" +
     previousMarkdown +
     "\n\nMETRICS PACK (JSON):\n" +
-    JSON.stringify(metricsPack, null, 2);
+    JSON.stringify(metricsPack);
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user }
-      ]
-    })
-  });
+  const { TINKER_MODEL_PATH, TINKER_BRIDGE_CMD } = loadEnv();
+  // Resolved path to bridge file (at root of apps/api or in base dir)
+  const bridgeScriptPath = path.resolve(__dirname, "../../tinker_bridge.py");
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OpenAI error ${res.status}: ${text}`);
+  try {
+    const command = `${TINKER_BRIDGE_CMD} "${bridgeScriptPath}" "${TINKER_MODEL_PATH}" ${JSON.stringify(`HEALTH_SUMMARY: ${user}`)} ${JSON.stringify(system)}`;
+    const output = execSync(command, { encoding: "utf-8" });
+    return output.trim();
+  } catch (err) {
+    console.error("Tinker bridge error:", err);
+    throw new Error(`Tinker sampling failed: ${err instanceof Error ? err.message : String(err)}`);
   }
-
-  const json = (await res.json()) as unknown;
-  const parsed = chatResponseSchema.safeParse(json);
-  if (!parsed.success) {
-    throw new Error("OpenAI response did not match expected schema");
-  }
-
-  const content = parsed.data.choices[0]?.message.content;
-  if (!content || content.trim().length === 0) {
-    throw new Error("OpenAI response had empty content");
-  }
-
-  return content.trim();
 }
