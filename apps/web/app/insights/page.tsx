@@ -6,6 +6,7 @@ import { formatDateTime } from "../lib/format";
 import { getSessionOrNull } from "../lib/session";
 import { fetchUserApi } from "../lib/api-client";
 import RerunInsightsButton from "./rerun-insights-button";
+import ReactMarkdown from "react-markdown";
 
 type InsightsLatestResponse = {
   latest:
@@ -31,29 +32,40 @@ type InsightsHistoryResponse = {
 export const dynamic = "force-dynamic";
 
 function InsightMarkdown({ markdown }: { markdown: string }) {
-  const lines = markdown.split("\n").map((line) => line.trim()).filter(Boolean);
-  const heading = lines.find((line) => line.startsWith("#"));
-  const bullets = lines.filter((line) => line.startsWith("-"));
-  const paragraphs = lines.filter((line) => !line.startsWith("#") && !line.startsWith("-"));
-
   return (
-    <div className="stack">
-      {heading ? <div className="stat-value">{heading.replace(/^#+\s*/, "")}</div> : null}
-      {paragraphs.length ? (
-        paragraphs.map((p, index) => (
-          <p key={index} className="muted">
-            {p}
-          </p>
-        ))
-      ) : null}
-      {bullets.length ? (
-        <ul className="list">
-          {bullets.map((item) => (
-            <li key={item}>{item.replace(/^-+\s*/, "")}</li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
+    <ReactMarkdown
+      components={{
+        // Style headings
+        h1: ({ children }) => <h1 className="stat-value">{children}</h1>,
+        h2: ({ children }) => <h2 className="stat-value">{children}</h2>,
+        h3: ({ children }) => <h3 className="stat-value">{children}</h3>,
+
+        // Style paragraphs
+        p: ({ children }) => <p className="muted">{children}</p>,
+
+        // Style lists
+        ul: ({ children }) => <ul className="list">{children}</ul>,
+        ol: ({ children }) => <ol className="list">{children}</ol>,
+        li: ({ children }) => <li>{children}</li>,
+
+        // Style bold text
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+
+        // Style links
+        a: ({ href, children }) => (
+          <a href={href} className="link" target="_blank" rel="noopener noreferrer">
+            {children}
+          </a>
+        ),
+
+        // Style inline code
+        code: ({ children }) => (
+          <code className="chip">{children}</code>
+        ),
+      }}
+    >
+      {markdown}
+    </ReactMarkdown>
   );
 }
 

@@ -46,15 +46,20 @@ export async function generateInsightsUnifiedDiff(params: {
     JSON.stringify(metricsPack);
 
   const { TINKER_MODEL_PATH, TINKER_BRIDGE_CMD } = loadEnv();
-  // Resolved path to bridge file (at root of apps/api or in base dir)
+  // Resolved path to bridge file (in apps/api directory)
+  // __dirname will be /app/apps/api/dist/insights/ at runtime
+  // We need to go from there to /app/apps/api/tinker_bridge.py
   const bridgeScriptPath = path.resolve(__dirname, "../../tinker_bridge.py");
 
   try {
-    const command = `${TINKER_BRIDGE_CMD} "${bridgeScriptPath}" "${TINKER_MODEL_PATH}" ${JSON.stringify(`HEALTH_SUMMARY: ${user}`)} ${JSON.stringify(system)}`;
-    const output = execSync(command, { encoding: "utf-8" });
+    const userInput = `HEALTH_SUMMARY: ${user}`;
+    const command = `${TINKER_BRIDGE_CMD} "${bridgeScriptPath}" "${TINKER_MODEL_PATH}" ${JSON.stringify(userInput)} ${JSON.stringify(system)}`;
+    const output = execSync(command, { encoding: "utf-8", stdio: ['pipe', 'pipe', 'pipe'] });
     return output.trim();
-  } catch (err) {
+  } catch (err: any) {
     console.error("Tinker bridge error:", err);
+    if (err?.stdout) console.error('stdout:', err.stdout.toString());
+    if (err?.stderr) console.error('stderr:', err.stderr.toString());
     throw new Error(`Tinker sampling failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

@@ -79,9 +79,17 @@ export async function insightsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "insights_disabled" });
     }
 
-    if (!env.OPENAI_API_KEY || !env.INSIGHTS_MODEL) {
+    // Check for either Tinker or OpenAI credentials
+    const hasTinker = env.TINKER_MODEL_PATH && env.TINKER_API_KEY;
+    const hasOpenAI = env.OPENAI_API_KEY && env.INSIGHTS_MODEL;
+
+    if (!hasTinker && !hasOpenAI) {
       return reply.code(400).send({ error: "insights_unavailable" });
     }
+
+    // Determine which API to use
+    const apiKey = hasOpenAI ? env.OPENAI_API_KEY! : env.TINKER_API_KEY!;
+    const model = hasOpenAI ? env.INSIGHTS_MODEL! : "tinker";
 
     const latestRun = await prisma.pipelineRun.findFirst({
       where: { userId: user.id },
@@ -103,16 +111,26 @@ export async function insightsRoutes(app: FastifyInstance) {
     let diffFromPrev: string | null = null;
 
     try {
-      const diff = await generateInsightsUnifiedDiff({
-        apiKey: env.OPENAI_API_KEY,
-        model: env.INSIGHTS_MODEL,
+      const modelOutput = await generateInsightsUnifiedDiff({
+        apiKey,
+        model,
         previousMarkdown,
         metricsPack,
         systemPrompt: user.insightsSystemPrompt
       });
 
-      nextMarkdown = applyUnifiedDiff({ previous: previousMarkdown, patch: diff });
-      diffFromPrev = prev ? diff : null;
+      // Check if the output looks like a unified diff or direct markdown
+      const isUnifiedDiff = modelOutput.includes('---') && modelOutput.includes('+++');
+
+      if (isUnifiedDiff) {
+        // Model output a unified diff patch, apply it
+        nextMarkdown = applyUnifiedDiff({ previous: previousMarkdown, patch: modelOutput });
+        diffFromPrev = prev ? modelOutput : null;
+      } else {
+        // Model output direct markdown, use as-is
+        nextMarkdown = modelOutput;
+        diffFromPrev = null;
+      }
     } catch (err) {
       return reply
         .code(500)

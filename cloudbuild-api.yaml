@@ -43,6 +43,10 @@ steps:
       - DATABASE_DIRECT_URL=${_DATABASE_DIRECT_URL_SECRET}:latest
       - --set-secrets
       - TINKER_API_KEY=${_TINKER_API_KEY_SECRET}:latest
+      - --set-secrets
+      - INTERNAL_API_KEY=${_INTERNAL_API_KEY_SECRET}:latest
+      - --set-secrets
+      - PIPELINE_TOKEN=${_PIPELINE_TOKEN_SECRET}:latest
       - --quiet
 images:
   - gcr.io/$PROJECT_ID/health-agent-api:$BUILD_ID
@@ -53,6 +57,8 @@ substitutions:
   _TINKER_API_KEY_SECRET: tinker-api-key
   _DATABASE_URL_SECRET: health-agent-database-url
   _DATABASE_DIRECT_URL_SECRET: health-agent-database-direct-url
+  _INTERNAL_API_KEY_SECRET: internal-api-key
+  _PIPELINE_TOKEN_SECRET: health-agent-pipeline-token
 options:
   logging: CLOUD_LOGGING_ONLY
 availableSecrets:
