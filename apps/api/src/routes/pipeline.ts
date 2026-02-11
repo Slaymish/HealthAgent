@@ -277,10 +277,12 @@ export async function pipelineRoutes(app: FastifyInstance) {
   app.post("/run", async (req, reply) => {
     const user = await requireUserFromInternalRequest({ req, reply, env, allowPipelineToken: true });
     if (!user) return;
+    const ingestLimit = env.PIPELINE_MAX_INGESTS_PER_RUN;
 
     const unprocessed = await prisma.ingestFile.findMany({
       where: { userId: user.id, processedAt: null },
-      orderBy: { receivedAt: "asc" }
+      orderBy: { receivedAt: "asc" },
+      take: ingestLimit
     });
 
     const warnings: string[] = [];
@@ -414,6 +416,10 @@ export async function pipelineRoutes(app: FastifyInstance) {
       processedCount += 1;
     }
 
+    const remainingUnprocessedCount = await prisma.ingestFile.count({
+      where: { userId: user.id, processedAt: null }
+    });
+
     const metricsPack = await computeMetricsPack(user.id);
     const goalProjection = computeGoalProjection({ targetWeightKg: user.targetWeightKg, metricsPack: metricsPack as any });
     const metricsPackWithGoal = {
@@ -446,12 +452,16 @@ export async function pipelineRoutes(app: FastifyInstance) {
       } else {
         let nextMarkdown = prev.markdown;
         let diffFromPrev: string | null = null;
+        const hasTinker = Boolean(env.TINKER_MODEL_PATH && env.TINKER_API_KEY);
+        const hasOpenAI = Boolean(env.OPENAI_API_KEY && env.INSIGHTS_MODEL);
+        const apiKey = hasOpenAI ? env.OPENAI_API_KEY! : hasTinker ? env.TINKER_API_KEY! : null;
+        const model = hasOpenAI ? env.INSIGHTS_MODEL! : hasTinker ? "tinker" : null;
 
-        if (env.OPENAI_API_KEY && env.INSIGHTS_MODEL) {
+        if (apiKey && model) {
           try {
             const diff = await generateInsightsUnifiedDiff({
-              apiKey: env.OPENAI_API_KEY,
-              model: env.INSIGHTS_MODEL,
+              apiKey,
+              model,
               previousMarkdown: prev.markdown,
               metricsPack: metricsPackWithGoal,
               systemPrompt: user.insightsSystemPrompt
@@ -463,7 +473,7 @@ export async function pipelineRoutes(app: FastifyInstance) {
             warnings.push(`Insights update failed: ${err instanceof Error ? err.message : String(err)}`);
           }
         } else {
-          warnings.push("Insights enabled but missing OPENAI_API_KEY or INSIGHTS_MODEL.");
+          warnings.push("Insights enabled but no model credentials are configured.");
         }
 
         const sanitized = sanitizeInsightsMarkdown(nextMarkdown);
@@ -489,6 +499,8 @@ export async function pipelineRoutes(app: FastifyInstance) {
       ok: true,
       runId: run.id,
       processedIngestCount: processedCount,
+      processedIngestLimit: ingestLimit,
+      remainingUnprocessedCount,
       warnings,
       metricsPack: metricsPackWithGoal
     });

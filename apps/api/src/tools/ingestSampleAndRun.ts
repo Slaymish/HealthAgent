@@ -64,11 +64,10 @@ async function run() {
   const env = loadEnv();
 
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const repoRoot = path.resolve(here, "../../../../");
 
   const inputPath = process.argv[2]
     ? path.resolve(process.cwd(), process.argv[2])
-    : path.join(repoRoot, "HealthAutoExport-2026-01-01-2026-01-15.json");
+    : path.join(here, "../parsers/fixtures/healthAutoExport.sample.json");
 
   const seeded = await seedIngestFromFile({ filePath: inputPath });
 

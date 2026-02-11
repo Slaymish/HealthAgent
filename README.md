@@ -35,8 +35,8 @@ pnpm db:up
 pnpm db:generate
 pnpm db:migrate
 
-cp .env.example apps/api/.env
-cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
 pnpm dev
 ```
 
@@ -45,7 +45,8 @@ pnpm dev
 
 Notes:
 - API loads dotenv from `apps/api/.env`.
-- Set `INTERNAL_API_KEY` in both `.env` files.
+- Set the same `INTERNAL_API_KEY` and `PIPELINE_TOKEN` in both env files.
+- `NEXTAUTH_SECRET`, `GITHUB_CLIENT_ID`, and `GITHUB_CLIENT_SECRET` are required for sign-in.
 
 ## Try it quickly (sample data)
 
@@ -70,23 +71,27 @@ Then open:
 
 ## Config (API)
 
-See `.env.example` for the full list. Common ones:
+See `apps/api/.env.example` and `apps/web/.env.example` for the full lists. Common ones:
 
 - `INGEST_TOKEN`
 - `INTERNAL_API_KEY`
+- `PIPELINE_TOKEN`
+- `PIPELINE_MAX_INGESTS_PER_RUN` (default `25`)
 - `API_BASE_URL` (for the web app to call the API)
 - `NEXTAUTH_SECRET` + `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` (web auth)
 - `DATABASE_URL`
 - `STORAGE_PROVIDER=local|gcs` (+ `STORAGE_LOCAL_DIR` or `STORAGE_BUCKET`)
 - `INSIGHTS_ENABLED` (optional, default false)
 - `OPENAI_API_KEY` + `INSIGHTS_MODEL` (optional; only used when `INSIGHTS_ENABLED=true`)
+- `TINKER_API_KEY` + `TINKER_MODEL_PATH` (optional alternative backend for insights)
 - Target weight is set in the Preferences tab (used for projected timeline)
 
 ## Enable LLM insights
 
-- Copy `.env.example` to `apps/api/.env` and set `INSIGHTS_ENABLED=true`.
+- Copy `apps/api/.env.example` to `apps/api/.env` and set `INSIGHTS_ENABLED=true`.
 - Add your OpenAI key to `OPENAI_API_KEY` and choose a chat-completions model for `INSIGHTS_MODEL` (e.g. `gpt-4o-mini`) in `apps/api/.env`.
 - Keep the key server-side only; the web app never needs it. Trigger insights generation by running the pipeline (`POST /api/pipeline/run` with `x-internal-api-key` + `x-user-id` headers, or use `pnpm --filter @health-agent/api seed:sample` locally).
+- Alternatively, set `TINKER_API_KEY` (with `TINKER_MODEL_PATH`) to use the Tinker bridge backend.
 
 ## Deploy
 

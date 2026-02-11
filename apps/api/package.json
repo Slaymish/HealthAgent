@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx src/env.test.ts && tsx src/auth.test.ts && tsx src/insights/llm.test.ts && tsx src/parsers/healthAutoExport.test.ts",
     "smoke": "tsx src/smoke.ts",
     "parse:test": "tsx src/parsers/healthAutoExport.test.ts",
     "seed:sample": "tsx src/tools/ingestSampleAndRun.ts",

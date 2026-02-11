@@ -25,11 +25,15 @@ export function hashToken(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
+function generateFallbackToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
+
 export async function ensureLegacyUser(env: Env): Promise<User> {
   const existing = await prisma.user.findUnique({ where: { id: LEGACY_USER_ID } });
 
   if (!existing) {
-    const fallbackToken = env.INGEST_TOKEN ?? "legacy-token";
+    const fallbackToken = env.INGEST_TOKEN ?? generateFallbackToken();
     const hash = hashToken(fallbackToken);
     const preview = fallbackToken.slice(-6);
     return prisma.user.create({
@@ -52,7 +56,7 @@ export async function ensureLegacyUser(env: Env): Promise<User> {
       });
     }
   } else if (existing.ingestTokenHash.length !== 64) {
-    const fallbackToken = "legacy-token";
+    const fallbackToken = generateFallbackToken();
     const hash = hashToken(fallbackToken);
     const preview = fallbackToken.slice(-6);
     return prisma.user.update({

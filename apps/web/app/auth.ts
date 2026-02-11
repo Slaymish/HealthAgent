@@ -6,11 +6,21 @@ import { prisma } from "./lib/prisma";
 import { generateIngestToken, hashToken } from "./lib/tokens";
 import { ensureUserHasIngestToken, migrateLegacyDataToUser } from "./lib/user-provisioning";
 
-const resolvedSecret =
-  process.env.NEXTAUTH_SECRET ??
-  process.env.AUTH_SECRET ??
-  // Fallback keeps the app from crashing if secret is missing; replace in prod.
-  "development-only-secret";
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+const resolvedSecret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+if (!resolvedSecret) {
+  throw new Error("Missing required environment variable: NEXTAUTH_SECRET (or AUTH_SECRET)");
+}
+
+const githubClientId = requireEnv("GITHUB_CLIENT_ID");
+const githubClientSecret = requireEnv("GITHUB_CLIENT_SECRET");
 
 const baseAdapter = PrismaAdapter(prisma);
 const adapter: Adapter = {
@@ -34,8 +44,8 @@ export const authOptions: NextAuthOptions = {
   adapter,
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID ?? "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET ?? ""
+      clientId: githubClientId,
+      clientSecret: githubClientSecret
     })
   ],
   secret: resolvedSecret,

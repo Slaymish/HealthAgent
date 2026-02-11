@@ -13,7 +13,13 @@ export async function POST() {
   }
 
   const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001";
-  const internalKey = process.env.INTERNAL_API_KEY ?? "dev-internal-key";
+  const internalKey = process.env.INTERNAL_API_KEY;
+  if (!internalKey) {
+    return new Response(JSON.stringify({ error: "server_misconfigured_internal_api_key" }), {
+      status: 500,
+      headers: { "content-type": "application/json" }
+    });
+  }
 
   try {
     const res = await fetch(`${apiBaseUrl}/api/insights/rerun`, {

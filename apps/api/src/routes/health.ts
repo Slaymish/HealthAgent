@@ -95,23 +95,31 @@ export async function healthRoutes(app: FastifyInstance) {
       });
     }
 
-    if (env.INSIGHTS_ENABLED && !env.OPENAI_API_KEY) {
+    const hasOpenAI = Boolean(env.OPENAI_API_KEY && env.INSIGHTS_MODEL);
+    const hasTinker = Boolean(env.TINKER_API_KEY && env.TINKER_MODEL_PATH);
+    if (!env.INSIGHTS_ENABLED) {
       configChecks.push({
-        name: "openai_key",
-        status: "warn",
-        message: "INSIGHTS_ENABLED=true but OPENAI_API_KEY not configured"
-      });
-    } else if (!env.INSIGHTS_ENABLED) {
-      configChecks.push({
-        name: "openai_key",
+        name: "insights_backend",
         status: "pass",
         message: "INSIGHTS_ENABLED=false"
       });
+    } else if (!hasOpenAI && !hasTinker) {
+      configChecks.push({
+        name: "insights_backend",
+        status: "warn",
+        message: "INSIGHTS_ENABLED=true but no insights backend credentials are configured"
+      });
+    } else if (hasOpenAI) {
+      configChecks.push({
+        name: "insights_backend",
+        status: "pass",
+        message: "OpenAI insights backend configured"
+      });
     } else {
       configChecks.push({
-        name: "openai_key",
+        name: "insights_backend",
         status: "pass",
-        message: "OPENAI_API_KEY configured"
+        message: "Tinker insights backend configured"
       });
     }
 

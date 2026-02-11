@@ -2,10 +2,11 @@ import { z } from "zod";
 
 const envSchema = z.object({
   INGEST_TOKEN: z.string().min(1).optional(),
-  INTERNAL_API_KEY: z.string().min(1).default("dev-internal-key"),
+  INTERNAL_API_KEY: z.string().min(1),
   API_PORT: z.coerce.number().int().positive().default(process.env.PORT ? Number(process.env.PORT) : 8080),
 
   PIPELINE_TOKEN: z.string().optional(),
+  PIPELINE_MAX_INGESTS_PER_RUN: z.coerce.number().int().positive().default(25),
 
   DATABASE_URL: z.string().min(1),
   DATABASE_DIRECT_URL: z.string().optional(),
@@ -34,10 +35,12 @@ const envSchema = z.object({
     .default(false),
   OPENAI_API_KEY: z.string().optional(),
   INSIGHTS_MODEL: z.string().optional(),
-  TINKER_MODEL_PATH: z.string().optional().default("tinker://1bdf299a-25aa-5110-877d-9ce6c42f64af:train:0/sampler_weights/insights-agent-model"),
+  TINKER_MODEL_PATH: z
+    .string()
+    .optional()
+    .default("tinker://1bdf299a-25aa-5110-877d-9ce6c42f64af:train:0/sampler_weights/insights-agent-model"),
   TINKER_BRIDGE_CMD: z.string().optional().default("python3"),
   TINKER_API_KEY: z.string().optional()
-
 })
   .refine(
     (v) => (v.STORAGE_PROVIDER === "gcs" ? typeof v.STORAGE_BUCKET === "string" && v.STORAGE_BUCKET.length > 0 : true),

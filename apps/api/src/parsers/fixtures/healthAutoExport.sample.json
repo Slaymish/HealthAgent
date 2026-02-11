@@ -1,0 +1,99 @@
+{
+  "data": {
+    "metrics": [
+      {
+        "name": "weight_body_mass",
+        "units": "kg",
+        "data": [
+          { "date": "2026-01-10 07:00:00 +0000", "qty": 80.1 },
+          { "date": "2026-01-11 07:00:00 +0000", "qty": 79.9 }
+        ]
+      },
+      {
+        "name": "dietary_energy",
+        "units": "kJ",
+        "data": [
+          { "date": "2026-01-10 19:00:00 +0000", "qty": 9200, "source": "MacroFactor" },
+          { "date": "2026-01-11 19:00:00 +0000", "qty": 8700, "source": "MacroFactor" }
+        ]
+      },
+      {
+        "name": "protein",
+        "units": "g",
+        "data": [
+          { "date": "2026-01-10 19:00:00 +0000", "qty": 150, "source": "MacroFactor" },
+          { "date": "2026-01-11 19:00:00 +0000", "qty": 155, "source": "MacroFactor" }
+        ]
+      },
+      {
+        "name": "carbohydrates",
+        "units": "g",
+        "data": [
+          { "date": "2026-01-10 19:00:00 +0000", "qty": 220, "source": "MacroFactor" },
+          { "date": "2026-01-11 19:00:00 +0000", "qty": 205, "source": "MacroFactor" }
+        ]
+      },
+      {
+        "name": "total_fat",
+        "units": "g",
+        "data": [
+          { "date": "2026-01-10 19:00:00 +0000", "qty": 68, "source": "MacroFactor" },
+          { "date": "2026-01-11 19:00:00 +0000", "qty": 64, "source": "MacroFactor" }
+        ]
+      },
+      {
+        "name": "fiber",
+        "units": "g",
+        "data": [
+          { "date": "2026-01-10 19:00:00 +0000", "qty": 28, "source": "MacroFactor" },
+          { "date": "2026-01-11 19:00:00 +0000", "qty": 30, "source": "MacroFactor" }
+        ]
+      },
+      {
+        "name": "resting_heart_rate",
+        "units": "count/min",
+        "data": [
+          { "date": "2026-01-10 07:00:00 +0000", "qty": 54 },
+          { "date": "2026-01-11 07:00:00 +0000", "qty": 53 }
+        ]
+      },
+      {
+        "name": "heart_rate_variability",
+        "units": "ms",
+        "data": [
+          { "date": "2026-01-10 07:00:00 +0000", "qty": 42.5 },
+          { "date": "2026-01-11 07:00:00 +0000", "qty": 45.2 }
+        ]
+      },
+      {
+        "name": "sleep_analysis",
+        "units": "h",
+        "data": [
+          {
+            "sleepStart": "2026-01-09 22:45:00 +0000",
+            "sleepEnd": "2026-01-10 06:45:00 +0000",
+            "totalSleep": 8
+          },
+          {
+            "sleepStart": "2026-01-10 23:15:00 +0000",
+            "sleepEnd": "2026-01-11 06:45:00 +0000",
+            "totalSleep": 7.5
+          }
+        ]
+      }
+    ],
+    "workouts": [
+      {
+        "id": "workout-1",
+        "name": "Run",
+        "start": "2026-01-10 08:00:00 +0000",
+        "end": "2026-01-10 08:45:00 +0000",
+        "duration": 2700,
+        "distance": { "qty": 8.1 },
+        "avgHeartRate": { "qty": 145 },
+        "maxHeartRate": { "qty": 170 },
+        "speed": { "qty": 10.8 }
+      }
+    ]
+  }
+}

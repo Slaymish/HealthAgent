@@ -9,6 +9,8 @@ pnpm i
 pnpm db:up
 pnpm db:generate
 pnpm db:migrate
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @health-agent/api seed:sample
 pnpm dev
 ```
@@ -37,5 +39,7 @@ Ingest JSON → store raw → normalize into Postgres → compute metrics → re
 ## Notes
 
 - API dotenv lives at `apps/api/.env`.
+- Web env lives at `apps/web/.env.local`.
+- `INTERNAL_API_KEY` and `PIPELINE_TOKEN` must match between API and web env files.
 - Storage providers: `local` and `gcs`.
 - API is ESM, so internal imports use `.js` extensions.

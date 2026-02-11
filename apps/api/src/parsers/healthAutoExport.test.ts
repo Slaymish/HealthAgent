@@ -7,8 +7,7 @@ import { parseHealthAutoExport } from "./healthAutoExport.js";
 
 async function run() {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const root = path.resolve(here, "../../../../");
-  const samplePath = path.join(root, "HealthAutoExport-2026-01-01-2026-01-15.json");
+  const samplePath = path.join(here, "fixtures/healthAutoExport.sample.json");
 
   const raw = await fs.readFile(samplePath, "utf8");
   const payload = JSON.parse(raw) as unknown;

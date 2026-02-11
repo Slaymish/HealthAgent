@@ -5,6 +5,9 @@ dist
 build
 .env
 .env.*
+!.env.example
+!apps/api/.env.example
+!apps/web/.env.example
 .DS_Store
 coverage
 storage/local

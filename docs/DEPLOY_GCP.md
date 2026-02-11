@@ -39,8 +39,12 @@ gcloud run deploy $SERVICE \
   --allow-unauthenticated \
   --min-instances 0 \
   --max-instances 1 \
-  --set-env-vars \
-API_PORT=8080,STORAGE_PROVIDER=gcs,STORAGE_BUCKET=$BUCKET,INTERNAL_API_KEY=REPLACE_ME,PIPELINE_TOKEN=REPLACE_ME,INSIGHTS_ENABLED=false,DATABASE_URL='REPLACE_WITH_PROVIDER_URL'
+  --set-env-vars API_PORT=8080,STORAGE_PROVIDER=gcs,STORAGE_BUCKET=$BUCKET,INSIGHTS_ENABLED=false \
+  --set-secrets DATABASE_URL=health-agent-database-url:latest \
+  --set-secrets DATABASE_DIRECT_URL=health-agent-database-direct-url:latest \
+  --set-secrets INTERNAL_API_KEY=internal-api-key:latest \
+  --set-secrets PIPELINE_TOKEN=health-agent-pipeline-token:latest \
+  --set-secrets TINKER_API_KEY=tinker-api-key:latest
 ```
 
 ## Daily pipeline job
@@ -61,5 +65,6 @@ gcloud scheduler jobs create http health-agent-daily-pipeline \
 ## Notes
 
 - Prefer Secret Manager for secrets.
+- Never set `INTERNAL_API_KEY`, `PIPELINE_TOKEN`, `DATABASE_URL`, `NEXTAUTH_SECRET`, or provider keys inline with `--set-env-vars`.
 - Web deploy isn’t covered here; use `API_BASE_URL` for the web app.
 - Cloud SQL is supported but always-on; use it only if you want a managed DB.
