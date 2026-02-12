@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ClipboardList, FileClock, NotebookText } from "lucide-react";
 import { Badge, Card, PageHeader } from "../components/ui";
 import { demoInsightsHistory, demoInsightsLatest } from "../demo-data";
@@ -30,6 +31,18 @@ type InsightsHistoryResponse = {
 };
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Weekly insights review",
+  description: "User-scoped weekly insight summaries generated from HealthAgent pipeline runs.",
+  alternates: {
+    canonical: "/insights"
+  },
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 function InsightMarkdown({ markdown }: { markdown: string }) {
   return (

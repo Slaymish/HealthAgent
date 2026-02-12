@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Card, PageHeader, Stat } from "../components/ui";
 import { FileClock, FileJson, Hash, Package, Timer } from "lucide-react";
 import { demoPipelineLatest } from "../demo-data";
@@ -17,6 +18,18 @@ type PipelineLatestResponse = {
 };
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Raw pipeline metrics",
+  description: "User-specific raw metrics payload from the latest HealthAgent pipeline run.",
+  alternates: {
+    canonical: "/metrics"
+  },
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 export default async function MetricsPage() {
   const session = await getSessionOrNull();

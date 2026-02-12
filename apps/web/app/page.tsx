@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -32,6 +33,26 @@ type PipelineLatestResponse = {
 };
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Apple Health dashboard and weekly trend signals",
+  description:
+    "Track Apple Health trends for weight, nutrition, sleep, and training with pipeline-backed summaries and actionable next steps.",
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    title: "Apple Health dashboard and weekly trend signals",
+    description:
+      "Track Apple Health trends for weight, nutrition, sleep, and training with pipeline-backed summaries and actionable next steps.",
+    url: "/"
+  },
+  twitter: {
+    title: "Apple Health dashboard and weekly trend signals",
+    description:
+      "Track Apple Health trends for weight, nutrition, sleep, and training with pipeline-backed summaries and actionable next steps."
+  }
+};
 
 function GlanceSignal({
   title,

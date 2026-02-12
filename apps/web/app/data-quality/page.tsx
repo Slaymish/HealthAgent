@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Badge, Card, Grid, PageHeader, Stat } from "../components/ui";
 import { CalendarX2, Database, FileClock, PackageCheck } from "lucide-react";
 import { demoDataQuality } from "../demo-data";
@@ -19,6 +20,18 @@ type DataQualitySummaryResponse = {
 };
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Data quality checks",
+  description: "User-specific ingest freshness and missing-day data quality checks.",
+  alternates: {
+    canonical: "/data-quality"
+  },
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 function renderMissing(label: string, items: string[]) {
   return (

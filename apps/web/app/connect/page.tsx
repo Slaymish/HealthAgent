@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { KeyRound, ListChecks, PlugZap } from "lucide-react";
 import { Card, Grid, PageHeader } from "../components/ui";
@@ -6,6 +7,26 @@ import { prisma } from "../lib/prisma";
 import TokenManager from "./token-manager";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Connect Apple Health exports",
+  description:
+    "Generate an ingest token and configure your exporter to send Apple Health Auto Export JSON files to HealthAgent.",
+  alternates: {
+    canonical: "/connect"
+  },
+  openGraph: {
+    title: "Connect Apple Health exports",
+    description:
+      "Generate an ingest token and configure your exporter to send Apple Health Auto Export JSON files to HealthAgent.",
+    url: "/connect"
+  },
+  twitter: {
+    title: "Connect Apple Health exports",
+    description:
+      "Generate an ingest token and configure your exporter to send Apple Health Auto Export JSON files to HealthAgent."
+  }
+};
 
 export default async function ConnectPage() {
   const session = await getSessionOrNull();

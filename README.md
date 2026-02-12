@@ -78,6 +78,7 @@ See `apps/api/.env.example` and `apps/web/.env.example` for the full lists. Comm
 - `PIPELINE_TOKEN`
 - `PIPELINE_MAX_INGESTS_PER_RUN` (default `25`)
 - `API_BASE_URL` (for the web app to call the API)
+- `NEXT_PUBLIC_SITE_URL` (canonical web URL for metadata, sitemap, and llms.txt)
 - `NEXTAUTH_SECRET` + `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` (web auth)
 - `DATABASE_URL`
 - `STORAGE_PROVIDER=local|gcs` (+ `STORAGE_LOCAL_DIR` or `STORAGE_BUCKET`)

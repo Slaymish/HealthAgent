@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Paintbrush } from "lucide-react";
 import { Card, PageHeader } from "../components/ui";
 import ThemeToggle from "../components/theme-toggle";
@@ -7,6 +8,18 @@ import { prisma } from "../lib/prisma";
 import PreferencesForm from "./preferences-form";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "User preferences",
+  description: "User-specific targets and configuration for HealthAgent metrics and projections.",
+  alternates: {
+    canonical: "/preferences"
+  },
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 export default async function PreferencesPage() {
   const session = await getSessionOrNull();

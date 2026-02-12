@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Dumbbell, FileSearch, Moon, Scale, TrendingUp, Utensils } from "lucide-react";
 import { Card, PageHeader } from "../components/ui";
 import { demoPipelineLatest } from "../demo-data";
@@ -21,6 +22,18 @@ type PipelineLatestResponse = {
 type SeriesPoint<T> = { date: string } & T;
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Trend diagnostics",
+  description: "User-specific health trend diagnostics for weight, nutrition, sleep, and training.",
+  alternates: {
+    canonical: "/trends"
+  },
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 function Sparkline({ values }: { values: number[] }) {
   if (!values.length) return <p className="muted">No data</p>;
