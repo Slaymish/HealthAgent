@@ -100,6 +100,10 @@ export const demoDataQuality = {
     processedAt: new Date().toISOString()
   },
   lastPipelineRun: { id: "demo-run", createdAt: new Date().toISOString(), processedIngestCount: 12 },
+  failedIngests: {
+    count: 0,
+    latest: null
+  },
   missingDays: {
     weight: [],
     nutrition: ["2025-01-14"],

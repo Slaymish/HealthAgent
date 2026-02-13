@@ -246,6 +246,14 @@ function sanityWarnings(parsed: ReturnType<typeof parseAppleHealthExport>): stri
   return warnings;
 }
 
+function isUnifiedDiffPatch(value: string): boolean {
+  return value.includes("---") && value.includes("+++");
+}
+
+function truncateFailureReason(value: string, max = 2000): string {
+  return value.length <= max ? value : `${value.slice(0, max - 3)}...`;
+}
+
 export async function pipelineRoutes(app: FastifyInstance) {
   const env = loadEnv();
 
@@ -280,145 +288,161 @@ export async function pipelineRoutes(app: FastifyInstance) {
     const ingestLimit = env.PIPELINE_MAX_INGESTS_PER_RUN;
 
     const unprocessed = await prisma.ingestFile.findMany({
-      where: { userId: user.id, processedAt: null },
+      where: { userId: user.id, processedAt: null, failedAt: null },
       orderBy: { receivedAt: "asc" },
       take: ingestLimit
     });
 
     const warnings: string[] = [];
     let processedCount = 0;
+    let failedCount = 0;
 
     for (const ingest of unprocessed) {
-      const payload = await readStorageJson({ env, storageKey: ingest.storageKey });
-      const parsed = parseAppleHealthExport(payload);
-      warnings.push(...parsed.warnings);
-      warnings.push(...sanityWarnings(parsed));
+      try {
+        const payload = await readStorageJson({ env, storageKey: ingest.storageKey });
+        const parsed = parseAppleHealthExport(payload);
+        warnings.push(...parsed.warnings);
+        warnings.push(...sanityWarnings(parsed));
 
-      await prisma.$transaction([
-        ...parsed.rows.dailyWeights.map((row) =>
-          prisma.dailyWeight.upsert({
-            where: { userId_date: { userId: user.id, date: row.date } },
-            update: { weightKg: row.weightKg },
-            create: { userId: user.id, date: row.date, weightKg: row.weightKg }
-          })
-        ),
-        ...parsed.rows.dailyNutrition.map((row) =>
-          prisma.dailyNutrition.upsert({
-            where: { userId_date: { userId: user.id, date: row.date } },
-            update: {
-              calories: row.calories ?? null,
-              proteinG: row.proteinG ?? null,
-              carbsG: row.carbsG ?? null,
-              fatG: row.fatG ?? null,
-              fibreG: row.fibreG ?? null,
-              alcoholG: row.alcoholG ?? null
-            },
-            create: {
-              userId: user.id,
-              date: row.date,
-              calories: row.calories ?? null,
-              proteinG: row.proteinG ?? null,
-              carbsG: row.carbsG ?? null,
-              fatG: row.fatG ?? null,
-              fibreG: row.fibreG ?? null,
-              alcoholG: row.alcoholG ?? null
-            }
-          })
-        ),
-        ...parsed.rows.workouts.map((row) =>
-          row.sourceId
-            ? prisma.workout.upsert({
-                where: { userId_sourceId: { userId: user.id, sourceId: row.sourceId } },
-                update: {
-                  start: row.start,
-                  type: row.type,
-                  durationMin: row.durationMin,
-                  distanceKm: row.distanceKm ?? null,
-                  avgHr: row.avgHr ?? null,
-                  maxHr: row.maxHr ?? null,
-                  avgPace: row.avgPace ?? null
-                },
-                create: {
-                  userId: user.id,
-                  sourceId: row.sourceId,
-                  start: row.start,
-                  type: row.type,
-                  durationMin: row.durationMin,
-                  distanceKm: row.distanceKm ?? null,
-                  avgHr: row.avgHr ?? null,
-                  maxHr: row.maxHr ?? null,
-                  avgPace: row.avgPace ?? null
-                }
-              })
-            : prisma.workout.create({
-                data: {
-                  userId: user.id,
-                  start: row.start,
-                  type: row.type,
-                  durationMin: row.durationMin,
-                  distanceKm: row.distanceKm ?? null,
-                  avgHr: row.avgHr ?? null,
-                  maxHr: row.maxHr ?? null,
-                  avgPace: row.avgPace ?? null
-                }
-              })
-        ),
-        ...parsed.rows.sleepSessions.map((row) =>
-          row.dedupeKey
-            ? prisma.sleepSession.upsert({
-                where: { userId_dedupeKey: { userId: user.id, dedupeKey: row.dedupeKey } },
-                update: {
-                  start: row.start,
-                  end: row.end,
-                  durationMin: row.durationMin,
-                  quality: row.quality ?? null
-                },
-                create: {
-                  userId: user.id,
-                  dedupeKey: row.dedupeKey,
-                  start: row.start,
-                  end: row.end,
-                  durationMin: row.durationMin,
-                  quality: row.quality ?? null
-                }
-              })
-            : prisma.sleepSession.create({
-                data: {
-                  userId: user.id,
-                  start: row.start,
-                  end: row.end,
-                  durationMin: row.durationMin,
-                  quality: row.quality ?? null
-                }
-              })
-        ),
-        ...parsed.rows.dailyVitals.map((row) =>
-          prisma.dailyVitals.upsert({
-            where: { userId_date: { userId: user.id, date: row.date } },
-            update: {
-              restingHr: row.restingHr ?? null,
-              hrv: row.hrv ?? null
-            },
-            create: {
-              userId: user.id,
-              date: row.date,
-              restingHr: row.restingHr ?? null,
-              hrv: row.hrv ?? null
-            }
-          })
-        )
-      ]);
+        await prisma.$transaction([
+          ...parsed.rows.dailyWeights.map((row) =>
+            prisma.dailyWeight.upsert({
+              where: { userId_date: { userId: user.id, date: row.date } },
+              update: { weightKg: row.weightKg },
+              create: { userId: user.id, date: row.date, weightKg: row.weightKg }
+            })
+          ),
+          ...parsed.rows.dailyNutrition.map((row) =>
+            prisma.dailyNutrition.upsert({
+              where: { userId_date: { userId: user.id, date: row.date } },
+              update: {
+                calories: row.calories ?? null,
+                proteinG: row.proteinG ?? null,
+                carbsG: row.carbsG ?? null,
+                fatG: row.fatG ?? null,
+                fibreG: row.fibreG ?? null,
+                alcoholG: row.alcoholG ?? null
+              },
+              create: {
+                userId: user.id,
+                date: row.date,
+                calories: row.calories ?? null,
+                proteinG: row.proteinG ?? null,
+                carbsG: row.carbsG ?? null,
+                fatG: row.fatG ?? null,
+                fibreG: row.fibreG ?? null,
+                alcoholG: row.alcoholG ?? null
+              }
+            })
+          ),
+          ...parsed.rows.workouts.map((row) =>
+            row.sourceId
+              ? prisma.workout.upsert({
+                  where: { userId_sourceId: { userId: user.id, sourceId: row.sourceId } },
+                  update: {
+                    start: row.start,
+                    type: row.type,
+                    durationMin: row.durationMin,
+                    distanceKm: row.distanceKm ?? null,
+                    avgHr: row.avgHr ?? null,
+                    maxHr: row.maxHr ?? null,
+                    avgPace: row.avgPace ?? null
+                  },
+                  create: {
+                    userId: user.id,
+                    sourceId: row.sourceId,
+                    start: row.start,
+                    type: row.type,
+                    durationMin: row.durationMin,
+                    distanceKm: row.distanceKm ?? null,
+                    avgHr: row.avgHr ?? null,
+                    maxHr: row.maxHr ?? null,
+                    avgPace: row.avgPace ?? null
+                  }
+                })
+              : prisma.workout.create({
+                  data: {
+                    userId: user.id,
+                    start: row.start,
+                    type: row.type,
+                    durationMin: row.durationMin,
+                    distanceKm: row.distanceKm ?? null,
+                    avgHr: row.avgHr ?? null,
+                    maxHr: row.maxHr ?? null,
+                    avgPace: row.avgPace ?? null
+                  }
+                })
+          ),
+          ...parsed.rows.sleepSessions.map((row) =>
+            row.dedupeKey
+              ? prisma.sleepSession.upsert({
+                  where: { userId_dedupeKey: { userId: user.id, dedupeKey: row.dedupeKey } },
+                  update: {
+                    start: row.start,
+                    end: row.end,
+                    durationMin: row.durationMin,
+                    quality: row.quality ?? null
+                  },
+                  create: {
+                    userId: user.id,
+                    dedupeKey: row.dedupeKey,
+                    start: row.start,
+                    end: row.end,
+                    durationMin: row.durationMin,
+                    quality: row.quality ?? null
+                  }
+                })
+              : prisma.sleepSession.create({
+                  data: {
+                    userId: user.id,
+                    start: row.start,
+                    end: row.end,
+                    durationMin: row.durationMin,
+                    quality: row.quality ?? null
+                  }
+                })
+          ),
+          ...parsed.rows.dailyVitals.map((row) =>
+            prisma.dailyVitals.upsert({
+              where: { userId_date: { userId: user.id, date: row.date } },
+              update: {
+                restingHr: row.restingHr ?? null,
+                hrv: row.hrv ?? null
+              },
+              create: {
+                userId: user.id,
+                date: row.date,
+                restingHr: row.restingHr ?? null,
+                hrv: row.hrv ?? null
+              }
+            })
+          )
+        ]);
 
-      await prisma.ingestFile.update({
-        where: { id: ingest.id },
-        data: { processedAt: new Date() }
-      });
-      processedCount += 1;
+        await prisma.ingestFile.update({
+          where: { id: ingest.id },
+          data: { processedAt: new Date(), failedAt: null, failureReason: null }
+        });
+        processedCount += 1;
+      } catch (err) {
+        const reason = truncateFailureReason(err instanceof Error ? err.message : String(err));
+        warnings.push(`Failed ingest ${ingest.id}: ${reason}`);
+        failedCount += 1;
+        await prisma.ingestFile.update({
+          where: { id: ingest.id },
+          data: { processedAt: null, failedAt: new Date(), failureReason: reason }
+        });
+      }
     }
 
-    const remainingUnprocessedCount = await prisma.ingestFile.count({
-      where: { userId: user.id, processedAt: null }
-    });
+    const [remainingUnprocessedCount, failedUnprocessedCount] = await Promise.all([
+      prisma.ingestFile.count({
+        where: { userId: user.id, processedAt: null, failedAt: null }
+      }),
+      prisma.ingestFile.count({
+        where: { userId: user.id, processedAt: null, failedAt: { not: null } }
+      })
+    ]);
 
     const metricsPack = await computeMetricsPack(user.id);
     const goalProjection = computeGoalProjection({ targetWeightKg: user.targetWeightKg, metricsPack: metricsPack as any });
@@ -459,16 +483,25 @@ export async function pipelineRoutes(app: FastifyInstance) {
 
         if (apiKey && model) {
           try {
-            const diff = await generateInsightsUnifiedDiff({
+            const modelOutput = await generateInsightsUnifiedDiff({
               apiKey,
               model,
               previousMarkdown: prev.markdown,
               metricsPack: metricsPackWithGoal,
-              systemPrompt: user.insightsSystemPrompt
+              systemPrompt: user.insightsSystemPrompt,
+              openaiTimeoutMs: env.INSIGHTS_OPENAI_TIMEOUT_MS,
+              tinkerTimeoutMs: env.INSIGHTS_TINKER_TIMEOUT_MS,
+              tinkerBridgeCommand: env.TINKER_BRIDGE_CMD,
+              tinkerModelPath: env.TINKER_MODEL_PATH
             });
 
-            nextMarkdown = applyUnifiedDiff({ previous: prev.markdown, patch: diff });
-            diffFromPrev = diff;
+            if (isUnifiedDiffPatch(modelOutput)) {
+              nextMarkdown = applyUnifiedDiff({ previous: prev.markdown, patch: modelOutput });
+              diffFromPrev = modelOutput;
+            } else {
+              nextMarkdown = modelOutput;
+              diffFromPrev = null;
+            }
           } catch (err) {
             warnings.push(`Insights update failed: ${err instanceof Error ? err.message : String(err)}`);
           }
@@ -499,8 +532,10 @@ export async function pipelineRoutes(app: FastifyInstance) {
       ok: true,
       runId: run.id,
       processedIngestCount: processedCount,
+      failedIngestCount: failedCount,
       processedIngestLimit: ingestLimit,
       remainingUnprocessedCount,
+      failedUnprocessedCount,
       warnings,
       metricsPack: metricsPackWithGoal
     });

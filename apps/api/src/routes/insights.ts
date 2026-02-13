@@ -116,7 +116,11 @@ export async function insightsRoutes(app: FastifyInstance) {
         model,
         previousMarkdown,
         metricsPack,
-        systemPrompt: user.insightsSystemPrompt
+        systemPrompt: user.insightsSystemPrompt,
+        openaiTimeoutMs: env.INSIGHTS_OPENAI_TIMEOUT_MS,
+        tinkerTimeoutMs: env.INSIGHTS_TINKER_TIMEOUT_MS,
+        tinkerBridgeCommand: env.TINKER_BRIDGE_CMD,
+        tinkerModelPath: env.TINKER_MODEL_PATH
       });
 
       // Check if the output looks like a unified diff or direct markdown

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth";
 import { prisma } from "../../lib/prisma";
+import { requireSessionUserId } from "../../lib/auth-guard";
 
 type PreferencesPayload = {
   targetWeightKg?: number | null;
@@ -14,6 +15,8 @@ type PreferencesPayload = {
   targetFibreG?: number | null;
   insightsSystemPrompt?: string | null;
 };
+
+const MAX_INSIGHTS_SYSTEM_PROMPT_CHARS = 2000;
 
 function parseNumberField(
   body: Record<string, unknown>,
@@ -35,7 +38,11 @@ function parseNumberField(
   return value;
 }
 
-function parseTextField(body: Record<string, unknown>, key: keyof PreferencesPayload): string | null | undefined {
+function parseTextField(
+  body: Record<string, unknown>,
+  key: keyof PreferencesPayload,
+  options?: { maxLength?: number }
+): string | null | undefined {
   if (!Object.prototype.hasOwnProperty.call(body, key)) return undefined;
   const value = body[key];
   if (value === null) return null;
@@ -43,6 +50,9 @@ function parseTextField(body: Record<string, unknown>, key: keyof PreferencesPay
     throw new Error(`Invalid ${key}`);
   }
   const trimmed = value.trim();
+  if (options?.maxLength != null && trimmed.length > options.maxLength) {
+    throw new Error(`Invalid ${key}`);
+  }
   return trimmed.length === 0 ? null : trimmed;
 }
 
@@ -50,12 +60,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const auth = requireSessionUserId(session);
+  if ("response" in auth) return auth.response;
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: auth.userId },
     select: {
       targetWeightKg: true,
       targetCalories: true,
@@ -74,9 +83,8 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const auth = requireSessionUserId(session);
+  if ("response" in auth) return auth.response;
 
   let body: Record<string, unknown> = {};
   try {
@@ -103,11 +111,13 @@ export async function PUT(request: Request) {
     if (training !== undefined) data.targetTrainingSessions = training;
     const fibre = parseNumberField(body, "targetFibreG", { min: 0 });
     if (fibre !== undefined) data.targetFibreG = fibre;
-    const insightsSystemPrompt = parseTextField(body, "insightsSystemPrompt");
+    const insightsSystemPrompt = parseTextField(body, "insightsSystemPrompt", {
+      maxLength: MAX_INSIGHTS_SYSTEM_PROMPT_CHARS
+    });
     if (insightsSystemPrompt !== undefined) data.insightsSystemPrompt = insightsSystemPrompt;
 
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: auth.userId },
       data,
       select: {
         targetWeightKg: true,

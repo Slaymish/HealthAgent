@@ -107,7 +107,9 @@ export async function ingestRoutes(app: FastifyInstance) {
             source: last.source,
             receivedAt: last.receivedAt,
             checksum: last.checksum,
-            processedAt: last.processedAt
+            processedAt: last.processedAt,
+            failedAt: last.failedAt,
+            failureReason: last.failureReason
           }
         : null
     };

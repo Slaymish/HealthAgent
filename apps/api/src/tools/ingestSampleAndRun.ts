@@ -38,7 +38,9 @@ async function seedIngestFromFile(opts: { filePath: string }) {
     update: {
       storageKey,
       receivedAt,
-      processedAt: null
+      processedAt: null,
+      failedAt: null,
+      failureReason: null
     },
     create: {
       userId: LEGACY_USER_ID,
@@ -46,7 +48,9 @@ async function seedIngestFromFile(opts: { filePath: string }) {
       checksum,
       storageKey,
       receivedAt,
-      processedAt: null
+      processedAt: null,
+      failedAt: null,
+      failureReason: null
     }
   });
 

@@ -54,6 +54,7 @@ This repo includes a small Health Auto Export sample. It will write the sample i
 
 ```bash
 pnpm --filter @health-agent/api seed:sample
+pnpm --filter @health-agent/api legacy:migrate -- --target-user-id <user-id>
 ```
 
 Then open:
@@ -84,6 +85,7 @@ See `apps/api/.env.example` and `apps/web/.env.example` for the full lists. Comm
 - `STORAGE_PROVIDER=local|gcs` (+ `STORAGE_LOCAL_DIR` or `STORAGE_BUCKET`)
 - `INSIGHTS_ENABLED` (optional, default false)
 - `OPENAI_API_KEY` + `INSIGHTS_MODEL` (optional; only used when `INSIGHTS_ENABLED=true`)
+- `INSIGHTS_OPENAI_TIMEOUT_MS` / `INSIGHTS_TINKER_TIMEOUT_MS` (optional request timeouts, ms)
 - `TINKER_API_KEY` + `TINKER_MODEL_PATH` (optional alternative backend for insights)
 - Target weight is set in the Preferences tab (used for projected timeline)
 

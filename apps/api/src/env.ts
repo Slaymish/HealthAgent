@@ -35,6 +35,8 @@ const envSchema = z.object({
     .default(false),
   OPENAI_API_KEY: z.string().optional(),
   INSIGHTS_MODEL: z.string().optional(),
+  INSIGHTS_OPENAI_TIMEOUT_MS: z.coerce.number().int().positive().default(45000),
+  INSIGHTS_TINKER_TIMEOUT_MS: z.coerce.number().int().positive().default(90000),
   TINKER_MODEL_PATH: z
     .string()
     .optional()

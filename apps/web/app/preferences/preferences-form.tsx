@@ -277,7 +277,7 @@ export default function PreferencesForm({ initial }: PreferencesFormProps) {
             value={form.insightsSystemPrompt}
             onChange={(event) => setField("insightsSystemPrompt", event.target.value)}
           />
-          <p className="field-hint">Leave blank to use the default prompt.</p>
+          <p className="field-hint">Leave blank to use the default prompt. Maximum 2000 characters.</p>
         </div>
       </Card>
 

@@ -4,7 +4,7 @@ import GitHub from "next-auth/providers/github";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./lib/prisma";
 import { generateIngestToken, hashToken } from "./lib/tokens";
-import { ensureUserHasIngestToken, migrateLegacyDataToUser } from "./lib/user-provisioning";
+import { ensureUserHasIngestToken } from "./lib/user-provisioning";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -60,7 +60,6 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user }) {
       if (!user?.id) return;
-      await migrateLegacyDataToUser(user.id);
       await ensureUserHasIngestToken(user.id);
     }
   }

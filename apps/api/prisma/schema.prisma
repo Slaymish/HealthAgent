@@ -38,6 +38,7 @@ model User {
   dailyVitals DailyVitals[]
   insightsDocs InsightsDoc[]
   pipelineRuns PipelineRun[]
+  adminAuditLogs AdminAuditLog[]
 
   @@map("users")
 }
@@ -94,12 +95,31 @@ model IngestFile {
   storageKey  String   @map("storage_key")
   receivedAt  DateTime @default(now()) @map("received_at")
   processedAt DateTime? @map("processed_at")
+  failedAt    DateTime? @map("failed_at")
+  failureReason String? @db.Text @map("failure_reason")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, receivedAt])
   @@unique([userId, source, checksum])
   @@map("ingest_files")
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  actor       String
+  action      String
+  status      String
+  message     String?  @db.Text
+  metadata    Json?
+  targetUserId String? @map("target_user_id")
+
+  targetUser User? @relation(fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@index([targetUserId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model DailyWeight {

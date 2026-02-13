@@ -10,6 +10,16 @@ type DataQualitySummaryResponse = {
   range: { start: string; end: string };
   lastIngest: { id: string; source: string; receivedAt: string; processedAt: string | null } | null;
   lastPipelineRun: { id: string; createdAt: string; processedIngestCount: number } | null;
+  failedIngests: {
+    count: number;
+    latest: {
+      id: string;
+      source: string;
+      receivedAt: string;
+      failedAt: string | null;
+      failureReason: string | null;
+    } | null;
+  };
   missingDays: {
     weight: string[];
     nutrition: string[];
@@ -104,6 +114,13 @@ export default async function DataQualityPage() {
               <Stat label="Run id" value={data.lastPipelineRun.id} icon={<PackageCheck aria-hidden="true" />} />
               <Stat label="Created" value={formatDateTime(data.lastPipelineRun.createdAt)} icon={<FileClock aria-hidden="true" />} />
               <Stat label="Processed ingests" value={data.lastPipelineRun.processedIngestCount ?? "—"} icon={<Database aria-hidden="true" />} />
+              <Stat label="Failed ingests pending" value={data.failedIngests.count} icon={<CalendarX2 aria-hidden="true" />} />
+              {data.failedIngests.latest ? (
+                <p className="muted">
+                  Latest failure: {data.failedIngests.latest.id} at {formatDateTime(data.failedIngests.latest.failedAt)} (
+                  {data.failedIngests.latest.failureReason ?? "unknown"})
+                </p>
+              ) : null}
             </div>
           ) : (
             <p className="muted">No pipeline runs yet.</p>

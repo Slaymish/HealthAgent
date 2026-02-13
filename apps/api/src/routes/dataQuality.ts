@@ -26,9 +26,16 @@ export async function dataQualityRoutes(app: FastifyInstance) {
     const today = startOfDayUtc(now);
     const start14 = addDaysUtc(today, -13);
 
-    const [lastIngest, lastRun, weights, nutrition, vitals, sleeps, workouts] = await Promise.all([
+    const [lastIngest, lastRun, latestFailedIngest, failedIngestCount, weights, nutrition, vitals, sleeps, workouts] = await Promise.all([
       prisma.ingestFile.findFirst({ where: { userId: user.id }, orderBy: { receivedAt: "desc" } }),
       prisma.pipelineRun.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "desc" } }),
+      prisma.ingestFile.findFirst({
+        where: { userId: user.id, processedAt: null, failedAt: { not: null } },
+        orderBy: { failedAt: "desc" }
+      }),
+      prisma.ingestFile.count({
+        where: { userId: user.id, processedAt: null, failedAt: { not: null } }
+      }),
       prisma.dailyWeight.findMany({ where: { userId: user.id, date: { gte: start14, lte: today } } }),
       prisma.dailyNutrition.findMany({ where: { userId: user.id, date: { gte: start14, lte: today } } }),
       prisma.dailyVitals.findMany({ where: { userId: user.id, date: { gte: start14, lte: today } } }),
@@ -68,6 +75,18 @@ export async function dataQualityRoutes(app: FastifyInstance) {
             processedIngestCount: lastRun.processedIngestCount
           }
         : null,
+      failedIngests: {
+        count: failedIngestCount,
+        latest: latestFailedIngest
+          ? {
+              id: latestFailedIngest.id,
+              source: latestFailedIngest.source,
+              receivedAt: latestFailedIngest.receivedAt,
+              failedAt: latestFailedIngest.failedAt,
+              failureReason: latestFailedIngest.failureReason
+            }
+          : null
+      },
       missingDays: {
         weight: missing(presentWeight),
         nutrition: missing(presentNutrition),

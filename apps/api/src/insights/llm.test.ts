@@ -39,6 +39,7 @@ async function run() {
         const headers = init?.headers as Record<string, string> | undefined;
         assert.ok(headers);
         assert.equal(headers?.authorization, "Bearer test-key");
+        assert.ok(init?.signal, "expected abort signal for timeout handling");
         return {
           ok: true,
           status: 200,

@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": "../..",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -13,7 +14,11 @@
     ],
     "allowJs": true,
     "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@health-agent/shared": ["packages/shared/src/index.ts"],
+      "@health-agent/shared/*": ["packages/shared/src/*"]
+    }
   },
   "include": [
     "next-env.d.ts",
