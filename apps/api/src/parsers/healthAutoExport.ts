@@ -75,6 +75,42 @@ function pickPreferredSource(entries: MetricEntry[], preferredSource: string): M
   return preferred.length ? preferred : entries;
 }
 
+// Health Auto Export emits quantities in the phone's locale units. Everything
+// downstream (weight slopes, goal projection, pace) assumes kg and km, so the
+// units have to be read and converted here rather than trusting the raw qty.
+const LB_TO_KG = 0.45359237;
+const MI_TO_KM = 1.609344;
+
+function normalizeUnit(units: unknown): string | null {
+  return typeof units === "string" && units.trim() ? units.trim().toLowerCase() : null;
+}
+
+// Each converter returns null for units it cannot handle, so the caller can
+// warn once and skip the value instead of storing a wrong number silently.
+function weightToKg(qty: number, units: string | null): number | null {
+  if (units == null || units === "kg") return qty;
+  if (units === "lb" || units === "lbs") return qty * LB_TO_KG;
+  return null;
+}
+
+function distanceToKm(qty: number, units: string | null): number | null {
+  if (units == null || units === "km") return qty;
+  if (units === "mi") return qty * MI_TO_KM;
+  if (units === "m") return qty / 1000;
+  return null;
+}
+
+function speedToKmh(qty: number, units: string | null): number | null {
+  if (units == null || units === "km/hr" || units === "km/h" || units === "kph") return qty;
+  if (units === "mi/hr" || units === "mi/h" || units === "mph") return qty * MI_TO_KM;
+  if (units === "m/s") return qty * 3.6;
+  return null;
+}
+
+function isKnownWeightUnit(units: string | null): boolean {
+  return units == null || units === "kg" || units === "lb" || units === "lbs";
+}
+
 function groupSumByDate(entries: MetricEntry[]): Map<string, number> {
   const out = new Map<string, number>();
   for (const e of entries) {
@@ -149,8 +185,13 @@ export const parseHealthAutoExport: IngestParser = (payload: unknown): ParserRes
   // Weight (kg)
   {
     const { units, entries } = getMetricEntries("weight_body_mass");
+    const unit = normalizeUnit(units);
     if (entries.length === 0) warnings.push("No weight_body_mass entries found.");
-    if (units && units !== "kg") warnings.push(`weight_body_mass units '${units}' (expected kg)`);
+    if (entries.length > 0 && !isKnownWeightUnit(unit)) {
+      warnings.push(`weight_body_mass units '${units}' not recognised (expected kg or lb); weights skipped.`);
+    } else if (unit === "lb" || unit === "lbs") {
+      warnings.push(`weight_body_mass units '${units}' converted to kg.`);
+    }
 
     // take last value per day
     const byDate = new Map<string, number>();
@@ -158,7 +199,9 @@ export const parseHealthAutoExport: IngestParser = (payload: unknown): ParserRes
       if (!e.date) continue;
       const v = typeof e.qty === "number" ? e.qty : Number(e.qty);
       if (!Number.isFinite(v)) continue;
-      byDate.set(e.date.slice(0, 10), v);
+      const kg = weightToKg(v, unit);
+      if (kg === null) continue;
+      byDate.set(e.date.slice(0, 10), kg);
     }
     for (const [dateKey, weightKg] of byDate) {
       rows.dailyWeights.push({ date: parseDateOnlyUtc(dateKey), weightKg });
@@ -287,7 +330,18 @@ export const parseHealthAutoExport: IngestParser = (payload: unknown): ParserRes
         : Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
 
       const distance = isRecord(w.distance) ? w.distance : null;
-      const distanceKm = distance && typeof distance.qty === "number" ? distance.qty : distance && distance.qty != null ? Number(distance.qty) : null;
+      const distanceQty = distance
+        ? typeof distance.qty === "number"
+          ? distance.qty
+          : distance.qty != null
+            ? Number(distance.qty)
+            : null
+        : null;
+      const distanceUnit = normalizeUnit(distance?.units);
+      const distanceKm = Number.isFinite(distanceQty ?? NaN) ? distanceToKm(distanceQty as number, distanceUnit) : null;
+      if (distanceQty != null && Number.isFinite(distanceQty) && distanceKm === null) {
+        warnings.push(`Workout '${name}' distance units '${String(distance?.units)}' not recognised; distance omitted.`);
+      }
 
       const avgHrObj = isRecord(w.avgHeartRate) ? w.avgHeartRate : null;
       const maxHrObj = isRecord(w.maxHeartRate) ? w.maxHeartRate : null;
@@ -295,7 +349,11 @@ export const parseHealthAutoExport: IngestParser = (payload: unknown): ParserRes
       const maxHr = maxHrObj && typeof maxHrObj.qty === "number" ? Math.round(maxHrObj.qty) : maxHrObj && maxHrObj.qty != null ? Math.round(Number(maxHrObj.qty)) : null;
 
       const speedObj = isRecord(w.speed) ? w.speed : null;
-      const speedKmh = speedObj && typeof speedObj.qty === "number" ? speedObj.qty : speedObj && speedObj.qty != null ? Number(speedObj.qty) : null;
+      const speedQty = speedObj ? (typeof speedObj.qty === "number" ? speedObj.qty : speedObj.qty != null ? Number(speedObj.qty) : null) : null;
+      const speedKmh = Number.isFinite(speedQty ?? NaN) ? speedToKmh(speedQty as number, normalizeUnit(speedObj?.units)) : null;
+      if (speedQty != null && Number.isFinite(speedQty) && speedKmh === null) {
+        warnings.push(`Workout '${name}' speed units '${String(speedObj?.units)}' not recognised; pace omitted.`);
+      }
       const avgPace = speedKmh && Number.isFinite(speedKmh) && speedKmh > 0 ? 60 / speedKmh : null; // min/km
 
       const resolvedSourceId =
