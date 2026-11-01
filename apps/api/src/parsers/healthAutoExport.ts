@@ -363,7 +363,10 @@ export const parseHealthAutoExport: IngestParser = (payload: unknown): ParserRes
           endRaw,
           name,
           durationSeconds: Number.isFinite(durationSeconds) ? durationSeconds : null,
-          distanceKm: Number.isFinite(distanceKm ?? NaN) ? (distanceKm as number) : null
+          // Identity keeps the raw exported quantity, not the converted km:
+          // rows ingested before unit conversion hashed the raw number, and
+          // changing the key here would insert duplicates instead of updating.
+          distanceKm: Number.isFinite(distanceQty ?? NaN) ? (distanceQty as number) : null
         });
 
       rows.workouts.push({

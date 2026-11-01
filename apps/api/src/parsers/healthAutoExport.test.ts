@@ -44,7 +44,6 @@ async function run() {
       ],
       workouts: [
         {
-          id: "us-run",
           name: "Run",
           start: "2026-02-01 08:00:00 +0000",
           end: "2026-02-01 08:30:00 +0000",
@@ -74,6 +73,35 @@ async function run() {
   assert.ok(
     usResult.warnings.some((w) => w.includes("converted to kg")),
     "expected a note that weight units were converted"
+  );
+
+  // Identity must survive the conversion: the pre-conversion parser hashed the
+  // raw quantity, so the same workout re-exported in km has to keep the same
+  // sourceId or ingest inserts a duplicate instead of updating the row.
+  const kmPayload = {
+    data: {
+      metrics: [],
+      workouts: [
+        {
+          name: "Run",
+          start: "2026-02-01 08:00:00 +0000",
+          end: "2026-02-01 08:30:00 +0000",
+          duration: 1800,
+          distance: { qty: 3.1 },
+          speed: { qty: 6.2 }
+        }
+      ]
+    }
+  };
+  const kmResult = parseHealthAutoExport(kmPayload);
+  assert.equal(
+    usResult.rows.workouts[0]?.sourceId,
+    kmResult.rows.workouts[0]?.sourceId,
+    "converting units must not change the workout sourceId"
+  );
+  assert.ok(
+    (kmResult.rows.workouts[0]?.distanceKm as number) !== (usWorkout.distanceKm as number),
+    "the stored distance should still differ between km and mi input"
   );
 
   // Unknown units are skipped with a warning, never stored as if they were kg.
